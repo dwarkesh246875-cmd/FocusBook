@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FocusBook Widget</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Caveat:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="overlay.css" />
+
+  <!-- Tasks received via IPC, no Firebase needed here -->
+</head>
+<body>
+
+  <div id="widget-wrapper" class="widget-wrapper edge-right" title="Click to open tasks">
+    <div id="trigger-zone" class="trigger-zone"></div>
+    <div id="widget-btn" class="widget-btn">
+      <svg id="tab-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M15 18l-6-6 6-6"/>
+      </svg>
+      <div id="icon-badge" class="icon-badge" style="display:none">0</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       EXPANDED STATE — task panel
+       ═══════════════════════════════════════ -->
+  <div id="widget-panel" class="widget-panel">
+    <!-- Panel drag handle header -->
+    <div class="panel-header" id="panel-header">
+      <div class="panel-drag-handle">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" class="panel-flame">
+          <path d="M8 2C8 2 11 4.5 11 7C11 8.65 9.65 10 8 10C6.35 10 5 8.65 5 7C5 5.75 5.75 4.35 6.6 3.5C6.6 4.75 7.25 5.15 8 5.15C8 3.75 8 2 8 2Z"
+                fill="url(#fg2)"/>
+          <defs>
+            <linearGradient id="fg2" x1="8" y1="2" x2="8" y2="10" gradientUnits="userSpaceOnUse">
+              <stop offset="0%"   stop-color="#FFE566"/>
+              <stop offset="100%" stop-color="#FF4500"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <span class="panel-title">FocusBook</span>
+      </div>
+      <div class="panel-meta">
+        <span id="panel-date" class="panel-date"></span>
+        <span id="panel-count" class="panel-count"></span>
+      </div>
+      <button class="panel-close-btn" id="panel-close-btn" title="Collapse">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <line x1="3" y1="7" x2="11" y2="7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Status: loading / signed out / empty -->
+    <div id="panel-status" class="panel-status">
+      <div class="status-spinner"></div>
+      <span id="panel-status-text">Loading…</span>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="panel-progress-wrap" id="panel-progress-wrap" style="display:none">
+      <div class="panel-progress-bar">
+        <div class="panel-progress-fill" id="panel-progress-fill"></div>
+      </div>
+      <span class="panel-progress-label" id="panel-progress-label"></span>
+    </div>
+
+    <!-- Task list -->
+    <div id="task-list" class="task-list"></div>
+
+    <!-- Footer -->
+    <div class="panel-footer">
+      <button class="open-app-btn" id="open-app-btn">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <rect x="1.5" y="1.5" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M5 5.5L9 5.5M5 8H7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        Open FocusBook
+      </button>
+    </div>
+  </div>
+
+  <script src="overlay.js"></script>
+</body>
+</html>

@@ -1,0 +1,412 @@
+/* ============================================================
+   overlay.css — FocusBook Widget Styles
+   ============================================================ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  font-family: 'Outfit', sans-serif;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ── COLLAPSED ICON TAB ───────────────────────────────────────── */
+.widget-wrapper {
+  position: fixed;
+  inset: 0;
+  width: 36px;
+  height: 64px;
+  display: flex;
+}
+
+.trigger-zone {
+  position: absolute;
+  inset: 0;
+  /* Invisible hover area */
+}
+
+.widget-btn {
+  position: absolute;
+  top: 0;
+  width: 32px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: rgba(255, 140, 0, 0.4);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), background 0.15s;
+}
+
+/* Edge orientation & Sliding */
+.widget-wrapper.edge-right { justify-content: flex-end; }
+.widget-wrapper.edge-right .widget-btn {
+  right: -28px; /* Hides it so only 4px is visible */
+  border-radius: 12px 0 0 12px;
+  border-right: none;
+}
+.widget-wrapper.edge-right:hover .widget-btn {
+  transform: translateX(-28px);
+}
+
+.widget-wrapper.edge-left { justify-content: flex-start; }
+.widget-wrapper.edge-left .widget-btn {
+  left: -28px; /* Hides it */
+  border-radius: 0 12px 12px 0;
+  border-left: none;
+}
+.widget-wrapper.edge-left .widget-btn svg {
+  transform: scaleX(-1); /* flip arrow */
+}
+.widget-wrapper.edge-left:hover .widget-btn {
+  transform: translateX(28px);
+}
+
+.widget-wrapper:hover .widget-btn {
+  background: rgba(255, 140, 0, 0.7);
+}
+
+/* Task count badge */
+.icon-badge {
+  position: absolute;
+  top: 4px;
+  right: -2px; /* Slight overlap for visibility */
+  width: 14px;
+  height: 14px;
+  background: #FF4500;
+  border: 1px solid rgba(15,15,25,0.9);
+  border-radius: 50%;
+  color: #fff;
+  font-size: 8px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.widget-wrapper.edge-left .icon-badge {
+  right: auto;
+  left: -2px;
+}
+
+/* ── EXPANDED PANEL ─────────────────────────────────────────── */
+.widget-panel {
+  position: fixed;
+  inset: 0;
+  width: 340px;
+  height: 480px;
+  background: rgba(14, 17, 32, 0.92);
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 20px;
+  box-shadow: 0 16px 64px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.04) inset;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  opacity: 0;
+  transform: scale(0.85);
+  pointer-events: none;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.widget-panel.visible {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: all;
+}
+
+/* ── PANEL HEADER ───────────────────────────────────────────── */
+.panel-header {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px 10px;
+  gap: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  -webkit-app-region: drag;
+  flex-shrink: 0;
+}
+
+.panel-drag-handle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 1;
+  -webkit-app-region: drag;
+}
+
+.panel-title {
+  font-family: 'Caveat', cursive;
+  font-size: 18px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.9);
+  -webkit-app-region: drag;
+}
+
+.panel-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  -webkit-app-region: drag;
+}
+
+.panel-date {
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+  font-weight: 400;
+}
+
+.panel-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.6);
+}
+
+.panel-close-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.5);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+  -webkit-app-region: no-drag;
+}
+
+.panel-close-btn:hover {
+  background: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.9);
+}
+
+/* ── PROGRESS BAR ───────────────────────────────────────────── */
+.panel-progress-wrap {
+  padding: 8px 16px 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.panel-progress-bar {
+  flex: 1;
+  height: 5px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.panel-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #FF8C00, #FFE566);
+  border-radius: 99px;
+  transition: width 0.6s ease;
+  width: 0%;
+}
+
+.panel-progress-label {
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── STATUS (loading / signed-out / empty) ──────────────────── */
+.panel-status {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+}
+
+.panel-status.hidden { display: none; }
+
+.status-spinner {
+  width: 28px;
+  height: 28px;
+  border: 2.5px solid rgba(255,255,255,0.12);
+  border-top-color: #FF8C00;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+#panel-status-text {
+  font-size: 13px;
+  color: rgba(255,255,255,0.45);
+  text-align: center;
+  line-height: 1.5;
+}
+
+/* ── TASK LIST ──────────────────────────────────────────────── */
+.task-list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.task-list::-webkit-scrollbar { width: 4px; }
+.task-list::-webkit-scrollbar-track { background: transparent; }
+.task-list::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.12);
+  border-radius: 99px;
+}
+
+/* Task item */
+.w-task {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s;
+  animation: taskFadeIn 0.25s ease forwards;
+  opacity: 0;
+}
+
+@keyframes taskFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.w-task:hover { background: rgba(255,255,255,0.08); }
+
+.w-task.done {
+  opacity: 0.4;
+}
+
+.w-task.done .w-task-title {
+  text-decoration: line-through;
+}
+
+/* Priority dot */
+.w-priority-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.w-priority-dot.high   { background: #FF5A5A; box-shadow: 0 0 6px rgba(255,90,90,0.5); }
+.w-priority-dot.med    { background: #FFB830; box-shadow: 0 0 6px rgba(255,184,48,0.5); }
+.w-priority-dot.low    { background: #4ADE80; box-shadow: 0 0 6px rgba(74,222,128,0.5); }
+.w-priority-dot.someday { background: #94a3b8; }
+
+/* Task title */
+.w-task-title {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.85);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+/* Sub-items count */
+.w-sub-count {
+  font-size: 10px;
+  color: rgba(255,255,255,0.3);
+  flex-shrink: 0;
+}
+
+/* Checkbox */
+.w-check {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255,255,255,0.2);
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s, background 0.15s;
+  -webkit-app-region: no-drag;
+}
+
+.w-check:hover {
+  border-color: rgba(255,255,255,0.5);
+  background: rgba(255,255,255,0.05);
+}
+
+.w-task.done .w-check {
+  background: rgba(255,255,255,0.15);
+  border-color: rgba(255,255,255,0.3);
+}
+
+/* Priority group header */
+.w-group-header {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.3);
+  padding: 8px 10px 3px;
+}
+
+/* ── FOOTER ─────────────────────────────────────────────────── */
+.panel-footer {
+  padding: 10px 14px 14px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+  flex-shrink: 0;
+}
+
+.open-app-btn {
+  width: 100%;
+  padding: 10px 16px;
+  background: rgba(255, 140, 0, 0.15);
+  border: 1px solid rgba(255, 140, 0, 0.3);
+  border-radius: 12px;
+  color: rgba(255, 200, 100, 0.9);
+  font-family: 'Caveat', cursive;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+  -webkit-app-region: no-drag;
+}
+
+.open-app-btn:hover {
+  background: rgba(255, 140, 0, 0.25);
+  border-color: rgba(255, 140, 0, 0.5);
+  transform: translateY(-1px);
+}
+
+.open-app-btn:active { transform: scale(0.98); }
+
+/* ── STATE: icon hidden when panel visible, vice versa ──────── */
+body.expanded .widget-wrapper { display: none; }
+body.collapsed .widget-panel { display: none; }
