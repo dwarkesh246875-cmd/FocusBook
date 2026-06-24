@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "app.netlify.dkfocusbook.twa",
+        "sha256_cert_fingerprints": ["73:44:8A:20:79:11:23:35:51:11:06:4D:00:99:D8:FA:45:55:2C:19:F4:79:69:19:EB:3A:8A:2B:C8:1E:C1:CC"]
+      }
+    }]

@@ -1,0 +1,10 @@
+Keep this file and signing.keystore in a safe place. You'll need these files if you want to upload future versions of your PWA to the Google Play Store.
+
+Key store file: signing.keystore
+Key store password: Ys6MVGsGf5oo
+Key alias: my-key-alias
+Key password: Ys6MVGsGf5oo
+Signer's full name: FocusBook Admin
+Signer's organization: FocusBook
+Signer's organizational unit: Engineering
+Signer's country code: US
