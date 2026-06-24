@@ -33,21 +33,11 @@ setSyncStatus('connecting');
 
 /* ─────────────────────────────────────────────────────────
    1. THEME ENGINE
-   Four themes: morning / midday / golden / night
-   Two modes: AUTO (follows time of day) | MANUAL (user cycles)
+   Two themes: light / dark
+   Mode: AUTO (follows time of day) | MANUAL (user toggles)
    ───────────────────────────────────────────────────────── */
-const THEME_ORDER = ['morning', 'midday', 'golden', 'night', 'midnight'];
-const THEME_ICONS = {
-  morning: 't-morning',
-  midday:  't-midday',
-  golden:  't-golden',
-  night:   't-night',
-  midnight: 't-midnight',
-};
-
-// Restore theme preference from localStorage
 let themeMode   = localStorage.getItem('fb_theme_mode')   || 'auto';
-let manualTheme = localStorage.getItem('fb_manual_theme') || 'morning';
+let manualTheme = localStorage.getItem('fb_manual_theme') || 'light';
 
 function saveThemePrefs() {
   localStorage.setItem('fb_theme_mode',   themeMode);
@@ -56,127 +46,98 @@ function saveThemePrefs() {
 
 function getAutoTheme() {
   const h = new Date().getHours();
-  if (h >= 5  && h < 11) return 'morning';
-  if (h >= 11 && h < 17) return 'midday';
-  if (h >= 17 && h < 20) return 'golden';   // warm amber dusk
-  if (h >= 20 && h < 23) return 'night';
-  return 'midnight';
+  if (h >= 6 && h < 19) return 'light';
+  return 'dark';
 }
 
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
-  // Show correct icon, hide others
-  THEME_ORDER.forEach(t => {
-    const el = document.getElementById(THEME_ICONS[t]);
-    if (el) el.style.display = t === theme ? 'block' : 'none';
-  });
+  const iconWrap = document.querySelector('.theme-icon-wrap');
+  if (iconWrap) {
+    iconWrap.innerHTML = theme === 'light'
+      ? '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>'
+      : '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>';
+  }
+}
+
+function lerpColor(a, b, amount) {
+  const ah = parseInt(a.replace(/#/g, ''), 16),
+        ar = ah >> 16, ag = ah >> 8 & 0xff, ab = ah & 0xff,
+        bh = parseInt(b.replace(/#/g, ''), 16),
+        br = bh >> 16, bg = bh >> 8 & 0xff, bb = bh & 0xff,
+        rr = ar + amount * (br - ar),
+        rg = ag + amount * (bg - ag),
+        rb = ab + amount * (bb - ab);
+  return '#' + (((1 << 24) + (rr << 16) + (rg << 8) + rb) | 0).toString(16).slice(1).padStart(6, '0');
+}
+
+function updateGradientForTime() {
+  const d = new Date();
+  const hour = d.getHours() + d.getMinutes() / 60;
+  const root = document.documentElement;
+  const theme = root.getAttribute('data-theme') || 'light';
+  
+  if (theme === 'light') {
+    let c1, c2;
+    if (hour < 12) {
+      const amt = Math.max(0, (hour - 6) / 6);
+      c1 = lerpColor('#E2E8F0', '#F8FAFC', amt);
+      c2 = lerpColor('#CBD5E1', '#E2E8F0', amt);
+    } else if (hour < 17) {
+      c1 = '#F8FAFC';
+      c2 = '#E2E8F0';
+    } else {
+      const amt = Math.min(1, (hour - 17) / 2);
+      c1 = lerpColor('#F8FAFC', '#FFF7ED', amt);
+      c2 = lerpColor('#E2E8F0', '#FFEDD5', amt);
+    }
+    root.style.setProperty('--bg-grad-1', c1);
+    root.style.setProperty('--bg-grad-2', c2);
+  } else {
+    let c1, c2;
+    if (hour > 19 && hour < 22) {
+      const amt = (hour - 19) / 3;
+      c1 = lerpColor('#1E293B', '#0F172A', amt);
+      c2 = lerpColor('#334155', '#1E293B', amt);
+    } else {
+      c1 = '#0F172A';
+      c2 = '#1E293B';
+    }
+    root.style.setProperty('--bg-grad-1', c1);
+    root.style.setProperty('--bg-grad-2', c2);
+  }
 }
 
 function updateAutoTheme() {
-  if (themeMode === 'auto') applyTheme(getAutoTheme());
+  if (themeMode === 'auto') {
+    const nextTheme = getAutoTheme();
+    if (document.documentElement.getAttribute('data-theme') !== nextTheme) {
+      applyTheme(nextTheme);
+    }
+  }
+  updateGradientForTime();
 }
 
-/* ── COMBINED THEME + SYNC BUTTON ───────────────────────────
-   Bottom-left floating button:
-     Short tap  (< 600ms) → cycle theme
-     Long press (≥ 600ms) → toggle sync auto / manual
-   ───────────────────────────────────────────────────────── */
-(function ThemeSyncButton() {
-  const btn       = document.getElementById('theme-sync-btn');
-  const holdRing  = document.getElementById('tsb-hold-ring');
+(function ThemeButton() {
+  const btn = document.getElementById('theme-sync-btn');
   if (!btn) return;
-
-  // Tooltip
-  let tooltip = null;
-  function showTooltip(text) {
-    if (!tooltip) {
-      tooltip = document.createElement('div');
-      tooltip.className = 'tsb-tooltip';
-      document.body.appendChild(tooltip);
-    }
-    tooltip.textContent = text;
-    tooltip.classList.add('visible');
-  }
-  function hideTooltip() {
-    if (tooltip) tooltip.classList.remove('visible');
-  }
-
-  let pressStart = 0;
-  let holdTimer  = null;
-  let didLong    = false;
-
-  function startPress(e) {
-    if (e.button !== undefined && e.button !== 0) return; // only left mouse
-    pressStart = Date.now();
-    didLong    = false;
-    holdRing.classList.remove('filling');
-    void holdRing.offsetWidth; // reflow
-    holdRing.classList.add('filling');
-    holdTimer = setTimeout(() => {
-      didLong = true;
-      holdRing.classList.remove('filling');
-      // Toggle sync
-      if (themeMode === 'auto') {
-        themeMode   = 'manual';
-        manualTheme = getAutoTheme();
-        setSyncStatus('manual');
-        showTooltip('Sync OFF — theme locked');
-      } else {
-        themeMode = 'auto';
-        applyTheme(getAutoTheme());
-        setSyncStatus('synced');
-        showTooltip('Sync ON — auto theme');
-      }
-      saveThemePrefs();
-      setTimeout(hideTooltip, 2000);
-    }, 600);
-  }
-
-  function endPress() {
-    clearTimeout(holdTimer);
-    holdRing.classList.remove('filling');
-    if (!didLong) {
-      // Short tap → cycle theme
-      if (themeMode === 'auto') {
-        themeMode   = 'manual';
-        const cur   = getAutoTheme();
-        const idx   = THEME_ORDER.indexOf(cur);
-        manualTheme = THEME_ORDER[(idx + 1) % THEME_ORDER.length];
-        applyTheme(manualTheme);
-        setSyncStatus('manual');
-      } else {
-        const idx   = THEME_ORDER.indexOf(manualTheme);
-        manualTheme = THEME_ORDER[(idx + 1) % THEME_ORDER.length];
-        applyTheme(manualTheme);
-      }
-      saveThemePrefs();
-    }
-    didLong = false;
-  }
-
-  // Mouse
-  btn.addEventListener('mousedown', startPress);
-  btn.addEventListener('mouseup',   endPress);
-  btn.addEventListener('mouseleave', () => {
-    clearTimeout(holdTimer);
-    holdRing.classList.remove('filling');
+  btn.addEventListener('click', () => {
+    themeMode = 'manual';
+    const current = document.documentElement.getAttribute('data-theme') || 'light';
+    manualTheme = current === 'light' ? 'dark' : 'light';
+    applyTheme(manualTheme);
+    saveThemePrefs();
+    updateGradientForTime();
   });
-
-  // Touch
-  btn.addEventListener('touchstart', e => { e.preventDefault(); startPress(e.touches[0]); }, { passive: false });
-  btn.addEventListener('touchend',   e => { e.preventDefault(); endPress(); }, { passive: false });
-  btn.addEventListener('touchcancel',() => { clearTimeout(holdTimer); holdRing.classList.remove('filling'); });
 })();
 
-// Boot — apply saved theme immediately so there's no flash
 if (themeMode === 'manual') {
   applyTheme(manualTheme);
-  setSyncStatus('manual');
 } else {
   updateAutoTheme();
 }
 setInterval(updateAutoTheme, 60 * 1000);
-
+updateGradientForTime();
 /* ── DATE / TIME ─────────────────────────────────────────── */
 function formatDate(date) {
   const days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -220,6 +181,13 @@ let streak         = { count: 0, lastDate: '', maxCount: 0, startDate: '' };
 const openSubTaskIds = new Set();
 const pendingDeletes = new Set(); // task IDs awaiting undo confirmation
 
+// Focus Session & Task Options State
+let activeOptionsTask = null;
+let activeFocusTask = null;
+let focusTimerInterval = null;
+let focusDurationMinutes = 25;
+let focusTimeRemaining = focusDurationMinutes * 60;
+let isFocusPaused = true;
 function xpFor(p) { return p === 'high' ? 100 : p === 'medium' ? 60 : 30; }
 
 /* ── LOTTIE ANIMATIONS ───────────────────────────────────── */
@@ -318,9 +286,9 @@ function updateFireIcon(streakCount) {
     '#9B2090','#8B18A0','#7B10B0','#6A08C0','#5900D0',
   ];
 
-  // Badge: scales with streak, 0.4 at streak 1 → 1.0 at streak 20
+  // Badge: scales with streak, 0.5 at streak 1 → 1.2 at streak 20
   if (badgeEl) {
-    const badgeScale = count === 0 ? 0.3 : 0.40 + (count / 20) * 0.60;
+    const badgeScale = count === 0 ? 0.4 : 0.50 + (count / 20) * 0.70;
     badgeEl.style.transform = `scale(${badgeScale.toFixed(3)})`;
     badgeEl.style.filter = flameFilter;
   }
@@ -429,15 +397,22 @@ function startSync() {
   });
 
   if (window.electronAPI && window.electronAPI.onToggleTask) {
-    window.electronAPI.onToggleTask(async (id, newDone) => {
-      const task = tasks.find(t => t.id === id);
+    window.electronAPI.onToggleTask(async (taskId, newDone) => {
+      const task = tasks.find(t => t.id === taskId);
       if (!task) return;
-      task.done = newDone;
+      
+      // If toggling ON from electron but subtasks incomplete, reject it
       if (newDone && Array.isArray(task.subItems) && task.subItems.length > 0) {
-        task.subItems.forEach(s => s.done = true);
+        if (!task.subItems.every(s => s.done)) {
+          showToast({ type: 'error', message: 'Complete all subtasks first!', duration: 3000 });
+          return;
+        }
       }
-      renderTasks();
-      await saveTask(task);
+      
+      if (task.done !== newDone) {
+        // use the standard toggleTask so we get XP + animations
+        toggleTask(taskId, null);
+      }
     });
   }
 
@@ -768,8 +743,23 @@ function updateStreak() {
   const today = todayStr();
   const yest  = (() => { const d=new Date(); d.setDate(d.getDate()-1);
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
-  if (!tasks.filter(t=>t.date===today).some(t=>t.done)) return;
-  if (streak.lastDate === today) return;
+  
+  const todayTasks = tasks.filter(t => t.date === today);
+  const allDone = todayTasks.length > 0 && todayTasks.every(t => t.done);
+
+  if (!allDone) {
+    // If today was counted, but a task was unchecked, revert the streak
+    if (streak.lastDate === today) {
+      streak.lastDate = yest;
+      streak.count = Math.max(0, streak.count - 1);
+      saveMeta();
+      document.getElementById('streak-count').textContent = streak.count;
+      updateFireIcon(streak.count);
+    }
+    return false;
+  }
+
+  if (streak.lastDate === today) return false;
   if (streak.lastDate === yest) {
     streak.count++;
   } else {
@@ -783,35 +773,35 @@ function updateStreak() {
   saveMeta();
   document.getElementById('streak-count').textContent = streak.count;
   updateFireIcon(streak.count);
+  return true; // true if streak just incremented
 }
 
 /* ── PROGRESS ────────────────────────────────────────────── */
 function renderProgress() {
-  const today = todayStr();
-  const tt    = tasks.filter(t => t.date === today);
-  const done  = tt.filter(t => t.done).length;
-  const total = tt.length;
-  const pct   = total === 0 ? 0 : Math.round(done/total*100);
-
-  const dailyXP = tt.filter(t => t.done).reduce((s, t) => s + xpFor(t.priority), 0);
-
-  document.getElementById('progress-fill').style.width = pct + '%';
-  document.getElementById('progress-glow').style.width = pct + '%';
+  // Include recurring tasks in counts
+  const recurringToday = tasks.filter(t => isRecurringActive(t));
+  const recurDone = recurringToday.filter(t => isRecurringDoneToday(t)).length;
+  const tt      = tasks.filter(t => !t.recurring && t.date === todayStr());
+  const done    = tt.filter(t => t.done).length + recurDone;
+  const total   = tt.length + recurringToday.length;
+  const dailyXP = tt.filter(t => t.done).reduce((s,t) => s + xpFor(t.priority), 0);
+  document.getElementById('progress-fill').style.width = total ? `${(done/total)*100}%` : '0%';
+  document.getElementById('progress-glow').style.width = total ? `${(done/total)*100}%` : '0%';
   document.getElementById('progress-label').textContent =
     total === 0 ? 'No tasks yet today' : `${done} of ${total} tasks done`;
-  
+
   const dailyXpEl = document.getElementById('daily-xp-value');
   if (dailyXpEl) dailyXpEl.textContent = dailyXP;
   document.getElementById('xp-value').textContent = totalXP;
 
-  // Today count badge
-  const rem = tt.filter(t => !t.done).length;
+  // Today count badge (remaining = regular undone + recurring undone today)
+  const rem = tt.filter(t => !t.done).length + (recurringToday.length - recurDone);
   const cnt = document.getElementById('today-count');
   if (cnt) { cnt.textContent = rem; cnt.style.display = rem > 0 ? 'flex' : 'none'; }
 
   // End-of-day summary
   if (total > 0 && done === total) {
-    const key = `fb_summary_${today}`;
+    const key = `fb_summary_${todayStr()}`;
     if (!localStorage.getItem(key)) {
       setTimeout(() => showSummary(done, total), 900);
       localStorage.setItem(key, '1');
@@ -830,27 +820,50 @@ function showXPPop(amt, x, y) {
 /* ── TASK CARD ───────────────────────────────────────────── */
 function priorityOrder(p) { return p==='high'?0:p==='medium'?1:2; }
 
+/* ── RECURRING HELPERS ───────────────────────────────── */
+function daysBetween(a, b) {
+  return Math.floor((new Date(b) - new Date(a)) / 86400000);
+}
+function isRecurringActive(task) {
+  if (!task.recurring || !task.recurStartDate) return false;
+  const elapsed = daysBetween(task.recurStartDate, todayStr());
+  return elapsed >= 0 && elapsed < task.recurDays;
+}
+function isRecurringDoneToday(task) {
+  return !!(task.recurDoneByDate || {})[todayStr()];
+}
+
 function createTaskCard(task) {
+  // ── Recurring task card ──
+  if (task.recurring) {
+    return createRecurringTaskCard(task);
+  }
+
   const card = document.createElement('div');
-  card.className = 'task-card';
+  card.className = 'task-card' + (task.carriedOver ? ' task-card-carried' : '');
   card.setAttribute('data-id', task.id);
   card.setAttribute('data-priority', task.priority);
   card.setAttribute('data-done', String(task.done));
 
   const pLabel = task.priority.charAt(0).toUpperCase() + task.priority.slice(1);
-  const aLabel = task.area.charAt(0).toUpperCase() + task.area.slice(1);
+  const aLabel = (task.area || '').charAt(0).toUpperCase() + (task.area || '').slice(1);
   const dateTag = (task.date && task.date !== todayStr() && task.schedule === 'date')
     ? `<span class="badge badge-date">${formatDisplayDate(task.date)}</span>` : '';
   const carriedTag = task.carriedOver
     ? `<span class="badge badge-carried">carried over</span>` : '';
-  const ts = task.created ? formatTimestamp(task.created) : '';
   const subItems = Array.isArray(task.subItems) ? task.subItems : [];
   const doneSubCount = subItems.filter(s => s.done).length;
-  const subBadge = subItems.length > 0
-    ? `<span style="font-family:'Caveat',cursive;font-size:12px;color:var(--ink-faint);margin-left:2px">▸ ${doneSubCount}/${subItems.length}</span>` : '';
+  
+  // Minimal subitems inline toggle
+  const subToggle = subItems.length > 0 ? `
+    <button class="task-subitems-toggle" aria-label="Toggle sub-items" style="display:inline-flex; align-items:center; gap:2px; padding:0; background:none; min-height:0; margin-left:4px; font-size:11px;">
+      ${doneSubCount}/${subItems.length} subtasks
+      <svg class="task-subitems-toggle-arrow" width="10" height="10" viewBox="0 0 10 10" fill="none" style="margin-left:2px;"><path d="M3 2l3 3-3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  ` : '';
 
   card.innerHTML = `
-    <div class="task-card-main">
+    <div class="swipe-action-bg left">✔ Complete</div><div class="swipe-action-bg right">✖ Delete</div><div class="task-card-slider"><div class="task-card-main">
       <div class="drag-handle" title="Drag to reorder">
         <svg width="10" height="16" viewBox="0 0 10 16" fill="none">
           <circle cx="3" cy="3"  r="1.5" fill="currentColor"/>
@@ -871,23 +884,18 @@ function createTaskCard(task) {
         <div class="task-meta">
           <span class="badge badge-${task.priority}">${pLabel}</span>
           <span class="badge badge-${task.area}">${aLabel}</span>
-          ${dateTag}${carriedTag}${subBadge}
+          ${dateTag}${carriedTag}${subToggle}
         </div>
-        ${subItems.length > 0 ? `
-          <button class="task-subitems-toggle" aria-label="Toggle sub-items">
-            <svg class="task-subitems-toggle-arrow" width="14" height="14" viewBox="0 0 10 10" fill="none"><path d="M2 3l3 4 3-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            ${subItems.length} sub-item${subItems.length !== 1 ? 's' : ''}
-          </button>
-        ` : ''}
       </div>
       <div class="task-actions">
-        <button class="task-action-btn edit" aria-label="Edit task" title="Edit task">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M9.5 2.5l2 2-6.5 6.5H3v-2L9.5 2.5z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/>
+        <button class="task-action-btn options" aria-label="Task options" title="Task options" style="padding:4px; min-width:28px; min-height:28px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="5" r="1.5"></circle>
+            <circle cx="12" cy="12" r="1.5"></circle>
+            <circle cx="12" cy="19" r="1.5"></circle>
           </svg>
         </button>
       </div>
-      ${ts ? `<span class="task-timestamp">${ts}</span>` : ''}
     </div>
     ${subItems.length > 0 ? `
       <div class="task-subitems-list">
@@ -899,78 +907,140 @@ function createTaskCard(task) {
             <span class="task-subitem-name">${escHtml(s.name)}</span>
           </div>`).join('')}
       </div>` : ''}
+    </div>
   `;
 
-  // Sub-items toggle expand/collapse
+  // Sub-items
   const siToggle = card.querySelector('.task-subitems-toggle');
   const siList   = card.querySelector('.task-subitems-list');
   if (siToggle && siList) {
-    if (openSubTaskIds.has(task.id)) {
-      siList.classList.add('open');
-      siToggle.classList.add('open');
-    }
+    if (openSubTaskIds.has(task.id)) { siList.classList.add('open'); siToggle.classList.add('open'); }
     siToggle.addEventListener('click', e => {
       e.stopPropagation();
       const open = siList.classList.toggle('open');
       siToggle.classList.toggle('open', open);
-      if (open) openSubTaskIds.add(task.id);
-      else openSubTaskIds.delete(task.id);
+      if (open) openSubTaskIds.add(task.id); else openSubTaskIds.delete(task.id);
     });
-    // Sub-item check toggle
     siList.querySelectorAll('.task-subitem-check').forEach(btn => {
       btn.addEventListener('click', async e => {
         e.stopPropagation();
         const subEl = btn.closest('.task-subitem');
         const subId = subEl.dataset.subId;
-        const sub   = (task.subItems || []).find(s => s.id === subId);
+        const sub = (task.subItems || []).find(s => s.id === subId);
         if (!sub) return;
         sub.done = !sub.done;
         subEl.classList.toggle('done', sub.done);
         btn.innerHTML = sub.done ? `<svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="var(--page-bg)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>` : '';
         await saveTask(task);
-        // Auto-complete main task if all sub-tasks are done
         if (!task.done && task.subItems.every(s => s.done)) {
+          toggleTask(task.id, e);
+        } else if (task.done && !sub.done) {
           toggleTask(task.id, e);
         }
       });
     });
   }
 
-  // Check off
   card.querySelector('.task-card-main').addEventListener('click', e => {
+    if (window.justLongPressed) return;
     if (e.target.closest('.task-actions') || e.target.closest('.task-subitems-toggle') || e.target.closest('.task-check')) return;
     toggleTask(task.id, e);
   });
-  card.querySelector('.task-check').addEventListener('click', e => {
-    e.stopPropagation();
-    toggleTask(task.id, e);
-  });
-
-  // Edit — opens full edit panel
-  card.querySelector('.task-action-btn.edit').addEventListener('click', e => {
-    e.stopPropagation();
-    openEditPanel(task);
-  });
-
-  // Long press to delete
-  let pressTimer;
-  const startPress = (e) => {
-    if (e.type === 'touchstart' && e.touches.length > 1) return;
-    pressTimer = setTimeout(() => {
-      if (window.confirm('Delete this task?')) {
-        deleteTask(task.id);
-      }
-    }, 600);
-  };
-  const cancelPress = () => clearTimeout(pressTimer);
+  card.querySelector('.task-check').addEventListener('click', e => { e.stopPropagation(); toggleTask(task.id, e); });
+  card.querySelector('.task-action-btn.options').addEventListener('click', e => { e.stopPropagation(); openTaskOptions(task); });
 
   const mainArea = card.querySelector('.task-card-main');
-  mainArea.addEventListener('mousedown', startPress);
-  mainArea.addEventListener('touchstart', startPress, {passive: true});
-  mainArea.addEventListener('mouseup', cancelPress);
-  mainArea.addEventListener('mouseleave', cancelPress);
-  mainArea.addEventListener('touchend', cancelPress);
-  mainArea.addEventListener('touchcancel', cancelPress);
+  mainArea.addEventListener('contextmenu', e => e.preventDefault());
+
+  attachSwipeListeners(card, task);
+
+  return card;
+}
+
+function createRecurringTaskCard(task) {
+  const doneToday = isRecurringDoneToday(task);
+  const elapsed   = daysBetween(task.recurStartDate, todayStr());
+  const dayNum    = elapsed + 1;
+  const total     = task.recurDays;
+
+  const card = document.createElement('div');
+  card.className = 'task-card task-card-recurring';
+  card.setAttribute('data-id', task.id);
+  card.setAttribute('data-done', String(doneToday));
+
+  card.innerHTML = `
+    <div class="swipe-action-bg left">✔ Complete</div><div class="swipe-action-bg right">✖ Delete</div><div class="task-card-slider"><div class="task-card-main">
+      <div class="task-recur-icon" title="Recurring task">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+          <path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+        </svg>
+      </div>
+      <div class="task-check">
+        <svg class="task-check-svg" width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path d="M2 6l3 3 5-5" stroke="var(--page-bg)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="task-body">
+        <p class="task-name">${escHtml(task.name)}</p>
+        <div class="task-meta">
+          <span class="badge badge-recurring" style="color:var(--ink-4);">Recurring</span>
+          <span class="badge badge-recurring-day">Day ${dayNum} / ${total}</span>
+        </div>
+      </div>
+      <div class="task-actions">
+        <button class="task-action-btn options" aria-label="Task options" title="Task options" style="padding:4px; min-width:28px; min-height:28px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="5" r="1.5"></circle>
+            <circle cx="12" cy="12" r="1.5"></circle>
+            <circle cx="12" cy="19" r="1.5"></circle>
+          </svg>
+        </button>
+      </div>
+    </div>
+    </div>
+  `;
+
+  // Toggle done-today
+  const toggle = async (e) => {
+    const recurDoneByDate = { ...(task.recurDoneByDate || {}) };
+    let justCompleted = false;
+    if (isRecurringDoneToday(task)) {
+      delete recurDoneByDate[todayStr()];
+    } else {
+      recurDoneByDate[todayStr()] = true;
+      justCompleted = true;
+    }
+    task.recurDoneByDate = recurDoneByDate;
+    
+    if (justCompleted) {
+      card.setAttribute('data-done', 'true');
+      card.classList.add('completing');
+      if (e) {
+        // Optional: showXPPop if you want XP for recurring tasks, but keeping it simple for now
+      }
+      setTimeout(() => card.classList.remove('completing'), 500);
+      // Let the animation play slightly before rebuilding the DOM
+      await new Promise(r => setTimeout(r, 300));
+    } else {
+      card.setAttribute('data-done', 'false');
+    }
+    
+    await saveTask(task);
+    renderTasks();
+  };
+  card.querySelector('.task-card-main').addEventListener('click', e => {
+    if (window.justLongPressed) return;
+    if (e.target.closest('.task-actions') || e.target.closest('.task-check')) return;
+    toggle(e);
+  });
+  card.querySelector('.task-check').addEventListener('click', e => { e.stopPropagation(); toggle(e); });
+  card.querySelector('.task-action-btn.options').addEventListener('click', e => { e.stopPropagation(); openTaskOptions(task); });
+
+  const mainArea = card.querySelector('.task-card-main');
+  mainArea.addEventListener('contextmenu', e => e.preventDefault());
+
+  attachSwipeListeners(card, task);
 
   return card;
 }
@@ -979,10 +1049,16 @@ function createTaskCard(task) {
 function renderTasks() {
   const today = todayStr();
 
-  // TODAY
+  // Separate recurring active tasks
+  const recurringTasks = tasks
+    .filter(t => isRecurringActive(t))
+    .sort((a, b) => (a.created || 0) - (b.created || 0));
+
+  // TODAY (regular only)
   const todayList  = document.getElementById('today-list');
   const todayEmpty = document.getElementById('today-empty');
-  const todayTasks = tasks.filter(t=>t.date===today)
+  const todayTasks = tasks
+    .filter(t => !t.recurring && t.date === today)
     .sort((a,b) => {
       const pd = priorityOrder(a.priority) - priorityOrder(b.priority);
       if (pd !== 0) return pd;
@@ -990,9 +1066,25 @@ function renderTasks() {
     });
 
   todayList.innerHTML = '';
-  todayEmpty.style.display = todayTasks.length ? 'none' : 'flex';
+  todayEmpty.style.display = (todayTasks.length || recurringTasks.length) ? 'none' : 'flex';
+
+
+
   let lastP = null;
+  let recurRendered = false;
+  const renderRecur = () => {
+    if (!recurRendered && recurringTasks.length > 0) {
+      const rh = document.createElement('div');
+      rh.className = 'task-section-header';
+      rh.textContent = 'Recurring Tasks';
+      todayList.appendChild(rh);
+      recurringTasks.forEach(t => todayList.appendChild(createTaskCard(t)));
+      recurRendered = true;
+    }
+  };
+
   todayTasks.forEach(t => {
+    if (t.priority === 'low') renderRecur();
     if (t.priority !== lastP) {
       const h = document.createElement('div');
       h.className = 'task-section-header';
@@ -1002,8 +1094,29 @@ function renderTasks() {
     todayList.appendChild(createTaskCard(t));
   });
 
+  renderRecur();
+
   // Wire up drag-and-drop on the today list after rendering
   initTodayDragDrop();
+
+  // Append random motivational text at the bottom of the list
+  if (todayTasks.length > 0 || recurringTasks.length > 0) {
+    const texts = [
+      "Keep pushing forward.",
+      "One task at a time.",
+      "Focus is your superpower.",
+      "Small steps, big impact.",
+      "Stay disciplined, stay focused.",
+      "You're doing great.",
+      "Embrace the process.",
+      "Make today count."
+    ];
+    const text = texts[Math.floor(Math.random() * texts.length)];
+    const footer = document.createElement('div');
+    footer.className = 'task-list-footer-text';
+    footer.textContent = text;
+    todayList.appendChild(footer);
+  }
 
   // UPCOMING
   const upList  = document.getElementById('upcoming-list');
@@ -1045,12 +1158,19 @@ function renderTasks() {
 async function toggleTask(id, event) {
   const task = tasks.find(t=>t.id===id);
   if (!task) return;
+
+  // Prevent marking main task as done if any subtask is incomplete
+  if (!task.done && Array.isArray(task.subItems) && task.subItems.length > 0) {
+    if (!task.subItems.every(s => s.done)) {
+      if (typeof showToast === 'function') {
+        showToast({ type: 'error', message: 'Complete all subtasks first!', duration: 3000 });
+      }
+      return;
+    }
+  }
+
   task.done = !task.done;
 
-  // Propagate done state to all sub-items
-  if (Array.isArray(task.subItems) && task.subItems.length > 0) {
-    task.subItems.forEach(s => { s.done = task.done; });
-  }
 
   if (task.done) {
     // FIX 7: Only award XP on completion if task was NOT pre-planned in morning ritual
@@ -1060,9 +1180,19 @@ async function toggleTask(id, event) {
     if (event) showXPPop(xp, event.clientX-20, event.clientY-40);
     const card = document.querySelector(`[data-id="${id}"]`);
     if (card) { card.classList.add('completing'); setTimeout(()=>card.classList.remove('completing'),500); }
-    updateStreak();
   } else {
     totalXP = Math.max(0, totalXP - xpFor(task.priority));
+  }
+  
+  const streakIncreased = updateStreak();
+  if (streakIncreased) {
+    const badge = document.getElementById('streak-badge');
+    if (badge) {
+      badge.classList.remove('flame-burst');
+      void badge.offsetWidth; // trigger reflow
+      badge.classList.add('flame-burst');
+      setTimeout(() => badge.classList.remove('flame-burst'), 600);
+    }
   }
   saveMeta();
   await saveTask(task);
@@ -1122,8 +1252,23 @@ async function deleteTask(id) {
   }
 }
 
-async function addTask(name, priority, area, schedule, date, subItems) {
-  // sortOrder places new tasks at end of their priority group
+async function addTask(name, priority, area, schedule, date, subItems, recurDays) {
+  if (priority === 'recurring') {
+    // Recurring task
+    const task = {
+      id: Date.now().toString(), name: name.trim(),
+      recurring: true,
+      recurDays: Math.max(1, Math.min(365, recurDays || 7)),
+      recurStartDate: todayStr(),
+      recurDoneByDate: {},
+      area: area || '',
+      created: Date.now(),
+    };
+    await saveTask(task);
+    switchTab('today');
+    return;
+  }
+  // Regular task
   const groupEnd = Math.max(0, ...tasks
     .filter(t => t.priority === priority)
     .map(t => t.sortOrder || t.created || 0));
@@ -1142,7 +1287,26 @@ async function addTask(name, priority, area, schedule, date, subItems) {
 function carryOver() {
   const today = todayStr();
   let penaltyApplied = false;
+  
+  // Repair pass: clear carriedOver from any recurring tasks that got caught in the bug
+  // and upgrade legacy "priority: recurring" tasks to true recurring tasks
   tasks.forEach(t => {
+    if (t.priority === 'recurring' && !t.recurring) {
+      t.recurring = true;
+      t.priority = 'medium'; // reset underlying priority
+      t.recurDays = 7;
+      t.recurStartDate = t.date || today;
+      t.recurDoneByDate = {};
+      t.carriedOver = false;
+      saveTask(t);
+    } else if (t.recurring && t.carriedOver) {
+      t.carriedOver = false;
+      saveTask(t);
+    }
+  });
+
+  tasks.forEach(t => {
+    if (t.recurring || t.priority === 'recurring') return; // Recurring tasks do not carry over
     if (!t.done && t.date && t.date < today && (t.schedule==='today'||t.schedule==='date')) {
       // FIX 6: XP penalty for carried-over tasks (lose 10 XP per task)
       const penalty = 10;
@@ -1153,6 +1317,14 @@ function carryOver() {
       }
       if (!t.originalDate) t.originalDate = t.date;
       t.date = today; t.schedule = 'today'; t.carriedOver = true;
+      saveTask(t);
+    }
+  });
+  // Repair pass: re-mark tasks whose carriedOver was incorrectly cleared
+  tasks.forEach(t => {
+    if (t.recurring || t.priority === 'recurring') return;
+    if (!t.done && t.originalDate && t.originalDate < today && !t.carriedOver) {
+      t.carriedOver = true;
       saveTask(t);
     }
   });
@@ -1198,17 +1370,93 @@ const dateInput    = document.getElementById('date-input');
 const saveBtn      = document.getElementById('save-btn');
 const panelTitle   = document.getElementById('panel-title');
 
+
+
 let panelMode    = 'add';
 let editingTask  = null;
 
 let sel      = { priority:'high', area: userDefaultArea, schedule:'today' };
 let panelSubItems = [];  // sub-items being built in the panel
 
-function setChips(groupId, value) {
-  document.querySelectorAll(`#${groupId} .chip`).forEach(c =>
-    c.classList.toggle('active', c.dataset.value===value)
-  );
+function setChips(groupId, value, noScroll = false) {
+  document.querySelectorAll(`#${groupId} .chip`).forEach(c => {
+    const isActive = c.dataset.value === value;
+    c.classList.toggle('active', isActive);
+    if (isActive && !noScroll && c.parentElement.classList.contains('camera-scroll')) {
+      // Small timeout ensures the container is visible/layout is done
+      setTimeout(() => {
+        c.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }, 10);
+    }
+  });
 }
+
+// Chip click logic: update active chip and state
+document.querySelectorAll('.chip-row').forEach(container => {
+  container.addEventListener('click', e => {
+    const chip = e.target.closest('.chip');
+    if (!chip || chip.classList.contains('active')) return;
+    
+    const groupId = container.id;
+    const key = groupId.replace('-chips', '');
+    
+    sel[key] = chip.dataset.value;
+    setChips(groupId, chip.dataset.value);
+    
+    // Handle special case for schedule
+    if (groupId === 'schedule-chips') {
+      const show = chip.dataset.value === 'date';
+      dateInput.style.display = show ? 'block' : 'none';
+      if (show && !dateInput.value) {
+        const tom = new Date(); tom.setDate(tom.getDate()+1);
+        dateInput.value = tom.toISOString().split('T')[0];
+        dateInput.min = todayStr();
+      }
+    }
+  });
+});
+
+// Camera scroll logic: update active chip based on center position
+document.querySelectorAll('.camera-scroll').forEach(container => {
+  let scrollTimeout;
+  container.addEventListener('scroll', () => {
+    clearTimeout(scrollTimeout);
+    scrollTimeout = setTimeout(() => {
+      const containerRect = container.getBoundingClientRect();
+      const containerCenter = containerRect.left + containerRect.width / 2;
+      let closestChip = null;
+      let minDistance = Infinity;
+
+      container.querySelectorAll('.chip').forEach(chip => {
+        const chipRect = chip.getBoundingClientRect();
+        const chipCenter = chipRect.left + chipRect.width / 2;
+        const distance = Math.abs(containerCenter - chipCenter);
+        if (distance < minDistance) {
+          minDistance = distance;
+          closestChip = chip;
+        }
+      });
+
+      if (closestChip && !closestChip.classList.contains('active')) {
+        const groupId = container.id;
+        const key = groupId.replace('-chips', '');
+        
+        sel[key] = closestChip.dataset.value;
+        setChips(groupId, closestChip.dataset.value, true);
+        
+        if (groupId === 'schedule-chips') {
+          const show = closestChip.dataset.value === 'date';
+          dateInput.style.display = show ? 'block' : 'none';
+          if (show && !dateInput.value) {
+            const tom = new Date(); tom.setDate(tom.getDate()+1);
+            dateInput.value = tom.toISOString().split('T')[0];
+            dateInput.min = todayStr();
+          }
+        }
+      }
+    }, 100);
+  });
+});
 
 function renderPanelSubItems() {
   const list = document.getElementById('subitem-list');
@@ -1238,6 +1486,17 @@ function resetPanel() {
   setChips('priority-chips','high');
   setChips('area-chips', userDefaultArea);
   setChips('schedule-chips','today');
+  // Reset recurring fields
+  const recurField = document.getElementById('recurring-days-field');
+  if (recurField) recurField.style.display = 'none';
+  const recurInput = document.getElementById('recurring-days-input');
+  if (recurInput) recurInput.value = '7';
+  const areaGroup  = document.querySelector('.panel-field-group:has(#area-chips)');
+  const schedGroup = document.querySelector('.panel-field-group:has(#schedule-chips)');
+  const subGroup   = document.getElementById('subitems-panel-group');
+  if (areaGroup)  areaGroup.style.display  = 'block';
+  if (schedGroup) schedGroup.style.display = 'block';
+  if (subGroup)   subGroup.style.display   = 'block';
   const subInput = document.getElementById('subitem-input');
   if (subInput) subInput.value = '';
   renderPanelSubItems();
@@ -1260,19 +1519,39 @@ function resetPanel() {
   subInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addSubItem(); } });
 })();
 
-// Area edit button — reopens questionnaire
-(function initAreaEditBtn() {
-  const btn = document.getElementById('panel-edit-areas-btn');
-  if (btn) btn.addEventListener('click', () => {
-    if (typeof window.showQuestionnaire === 'function') window.showQuestionnaire(null);
-  });
-})();
+// Removed initAreaEditBtn as Edit Areas is now a chip in the scroll list
 
-function openAddPanel() {
+let isRecurringPanel = false;
+
+function setRecurringMode(isRecur) {
+  isRecurringPanel = isRecur;
+  const recurField = document.getElementById('recurring-days-field');
+  const prioGroup  = document.querySelector('.panel-field-group:has(#priority-chips)');
+  const areaGroup  = document.querySelector('.panel-field-group:has(#area-chips)');
+  const schedGroup = document.querySelector('.panel-field-group:has(#schedule-chips)');
+  const subGroup   = document.getElementById('subitems-panel-group');
+
+  if (isRecur) {
+    if (recurField) recurField.style.display = 'block';
+    if (prioGroup)  prioGroup.style.display  = 'none';
+    if (areaGroup)  areaGroup.style.display  = 'none';
+    if (schedGroup) schedGroup.style.display = 'none';
+    if (subGroup)   subGroup.style.display   = 'none';
+  } else {
+    if (recurField) recurField.style.display = 'none';
+    if (prioGroup)  prioGroup.style.display  = 'block';
+    if (areaGroup)  areaGroup.style.display  = 'block';
+    if (schedGroup) schedGroup.style.display = 'block';
+    if (subGroup)   subGroup.style.display   = 'block';
+  }
+}
+
+function openAddPanel(isRecur = false) {
   panelMode = 'add';
   editingTask = null;
   resetPanel();
-  panelTitle.textContent = 'New task';
+  setRecurringMode(isRecur);
+  panelTitle.textContent = isRecur ? 'New recurring task' : 'New task';
   saveBtn.textContent    = 'Save task';
   addPanel.classList.add('open');
   panelOverlay.classList.add('visible');
@@ -1283,11 +1562,17 @@ function openAddPanel() {
 function openEditPanel(task) {
   panelMode   = 'edit';
   editingTask = task;
-  panelTitle.textContent = 'Edit task';
+  setRecurringMode(!!task.recurring);
+  panelTitle.textContent = task.recurring ? 'Edit recurring task' : 'Edit task';
   saveBtn.textContent    = 'Update task';
 
   // Pre-fill all fields
   taskInput.value = task.name;
+
+  if (task.recurring) {
+    const recurInput = document.getElementById('recurring-days-input');
+    if (recurInput) recurInput.value = task.recurDays || 7;
+  }
 
   sel.priority = task.priority;
   sel.area     = task.area;
@@ -1330,7 +1615,31 @@ function closePanel() {
   }, 50);
 }
 
-document.getElementById('fab-add').addEventListener('click', openAddPanel);
+const fabAddBtn = document.getElementById('fab-add');
+let fabPressTimer = null;
+let fabLongPressed = false;
+
+fabAddBtn.addEventListener('pointerdown', (e) => {
+  // Only trigger on primary button (left click or standard touch)
+  if (e.button !== 0 && e.pointerType === 'mouse') return;
+  fabLongPressed = false;
+  fabPressTimer = setTimeout(() => {
+    fabLongPressed = true;
+    openAddPanel(true); // Open in recurring mode
+  }, 400); // 400ms long press
+});
+
+fabAddBtn.addEventListener('pointerup', (e) => {
+  if (fabPressTimer) clearTimeout(fabPressTimer);
+  if (!fabLongPressed && (e.button === 0 || e.pointerType !== 'mouse')) {
+    openAddPanel(false); // Normal add mode
+  }
+});
+
+fabAddBtn.addEventListener('pointerleave', (e) => {
+  if (fabPressTimer) clearTimeout(fabPressTimer);
+});
+
 panelOverlay.addEventListener('click', closePanel);
 
 // Chip listeners — shared for both add and edit
@@ -1353,11 +1662,12 @@ panelOverlay.addEventListener('click', closePanel);
   });
 });
 
+
 // Save / Update
 saveBtn.addEventListener('click', async () => {
   const name = taskInput.value.trim();
   if (!name) { taskInput.style.borderColor='var(--high-color)'; taskInput.focus(); setTimeout(()=>taskInput.style.borderColor='',1200); return; }
-  if (sel.schedule==='date' && !dateInput.value) { dateInput.style.borderColor='var(--high-color)'; dateInput.focus(); setTimeout(()=>dateInput.style.borderColor='',1200); return; }
+  if (sel.priority !== 'recurring' && sel.schedule==='date' && !dateInput.value) { dateInput.style.borderColor='var(--high-color)'; dateInput.focus(); setTimeout(()=>dateInput.style.borderColor='',1200); return; }
 
   // Snapshot values BEFORE closePanel() resets sel
   const savedPriority = sel.priority;
@@ -1365,24 +1675,36 @@ saveBtn.addEventListener('click', async () => {
   const savedSchedule = sel.schedule;
   const savedDate     = dateInput.value;
   const savedSubItems = [...panelSubItems];
+  const savedRecurDays = parseInt(document.getElementById('recurring-days-input')?.value || '7', 10);
 
   if (panelMode === 'add') {
     closePanel();
-    await addTask(name, savedPriority, savedArea, savedSchedule, savedDate, savedSubItems);
+    const effectivePriority = isRecurringPanel ? 'recurring' : savedPriority;
+    await addTask(name, effectivePriority, savedArea, savedSchedule, savedDate, savedSubItems, savedRecurDays);
   } else {
-    // Update existing task
-    editingTask.name        = name;
-    editingTask.priority    = savedPriority;
-    editingTask.area        = savedArea;
-    editingTask.schedule    = savedSchedule;
-    editingTask.date        = savedSchedule==='today' ? todayStr()
-                            : savedSchedule==='someday' ? ''
-                            : savedDate;
-    editingTask.carriedOver = false;
-    editingTask.subItems    = savedSubItems;
+    if (editingTask.recurring) {
+      editingTask.name = name;
+      editingTask.recurDays = savedRecurDays;
+    } else {
+      // Update existing task
+      editingTask.name        = name;
+      editingTask.priority    = savedPriority;
+      editingTask.area        = savedArea;
+      editingTask.schedule    = savedSchedule;
+      editingTask.date        = savedSchedule==='today' ? todayStr()
+                              : savedSchedule==='someday' ? ''
+                              : savedDate;
+      // Only clear carriedOver if the user re-scheduled it
+      if (savedSchedule !== 'today') {
+        editingTask.carriedOver = false;
+      }
+      editingTask.subItems    = savedSubItems;
+      if (editingTask.area === undefined) editingTask.area = '';
+    }
     const taskToSave = { ...editingTask };
     closePanel();
     await saveTask(taskToSave);
+    renderTasks();
   }
 });
 
@@ -1518,18 +1840,17 @@ function renderCalendar() {
 
     if (isFuture)  cell.classList.add('cal-day-future');
     if (isToday)   cell.classList.add('cal-day-today');
-    if (isPerfect) cell.classList.add('cal-day-perfect');
-    if (isPartial) cell.classList.add('cal-day-partial');
-    if (isMissed)  cell.classList.add('cal-day-missed');
-
-    if (inStreak && !isFuture) {
-      const pd = calDateStr(calYear,calMonth,d-1);
-      const nd = calDateStr(calYear,calMonth,d+1);
-      const pS = streakSet.has(pd), nS = streakSet.has(nd);
-      if (pS&&nS) cell.classList.add('cal-day-streak-mid');
-      else if (!pS&&nS) cell.classList.add('cal-day-streak-start');
-      else if (pS&&!nS) cell.classList.add('cal-day-streak-end');
+    
+    // Calculate completion percentage for heatmap style
+    let completionPct = 0;
+    if (info && info.total > 0 && !info.hasCarryOverFrom && !isFuture) {
+      completionPct = info.done / info.total;
     }
+
+    // Set a custom CSS variable for the background opacity
+    cell.style.setProperty('--heatmap-opacity', completionPct.toFixed(2));
+    if (completionPct > 0) cell.classList.add('cal-day-active');
+    if (completionPct === 1) cell.classList.add('cal-day-perfect-heatmap');
 
     const showDot = (isPartial||isMissed)&&!isPerfect;
     cell.innerHTML = `<span class="cal-day-num">${d}</span>${showDot?'<span class="cal-day-dot"></span>':''}`;
@@ -1559,11 +1880,25 @@ function showDayDetail(ds) {
     const sorted = [...info.tasks].sort((a,b)=>a.done===b.done?0:a.done?1:-1);
     tasksEl.innerHTML = sorted.map(t=>`
       <div class="cal-detail-task">
-        <div class="cal-detail-check ${t.done?'done':''}">
-          ${t.done?`<svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="var(--page-bg)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`:''}
+        <div style="display:flex; align-items:center; width:100%;">
+          <div class="cal-detail-check ${t.done?'done':''}">
+            ${t.done?`<svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="var(--page-bg)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`:''}
+          </div>
+          <span class="cal-detail-task-name ${t.done?'done':''}">${escHtml(t.name)}</span>
+          <span class="badge badge-${t.priority}" style="font-size:10px; margin-left:auto;">${t.priority.charAt(0).toUpperCase()+t.priority.slice(1)}</span>
         </div>
-        <span class="cal-detail-task-name ${t.done?'done':''}">${escHtml(t.name)}</span>
-        <span class="badge badge-${t.priority}" style="font-size:10px">${t.priority.charAt(0).toUpperCase()+t.priority.slice(1)}</span>
+        ${t.subItems && t.subItems.length > 0 ? `
+          <div style="display:flex; flex-direction:column; gap:4px; margin-top:8px; margin-left:24px;">
+            ${t.subItems.map(s => `
+              <div style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--ink-3);">
+                <div style="width:12px; height:12px; border-radius:50%; border:1px solid var(--border-mid); display:flex; align-items:center; justify-content:center; background:${s.done?'var(--accent)':'transparent'}; border-color:${s.done?'var(--accent)':'var(--border-mid)'}">
+                  ${s.done ? `<svg width="6" height="6" viewBox="0 0 8 8" fill="none"><path d="M1 4l2 2 4-4" stroke="var(--page-bg)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>` : ''}
+                </div>
+                <span style="text-decoration:${s.done?'line-through':'none'}; opacity:${s.done?'0.6':'1'};">${escHtml(s.name)}</span>
+              </div>
+            `).join('')}
+          </div>
+        ` : ''}
       </div>`).join('');
   }
   detail.style.display='block';
@@ -1890,143 +2225,6 @@ function escHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-
-
-/* ─────────────────────────────────────────────────────────
-   FIX 1 — AREA QUESTIONNAIRE
-   Shown after onboarding completes, for new users only.
-   Saves chosen areas to localStorage + Firestore meta.
-   ───────────────────────────────────────────────────────── */
-(function Questionnaire() {
-  const DEFAULT_AREAS = ['client','creative','learning','admin'];
-  let selectedAreas   = [...DEFAULT_AREAS];
-  let defaultArea     = 'client';
-  let questStep       = 1;
-  let questDoneKey    = null;
-
-  const overlay      = document.getElementById('quest-overlay');
-  const body1        = document.getElementById('quest-body-1');
-  const body2        = document.getElementById('quest-body-2');
-  const stepNum      = document.getElementById('quest-step-num');
-  const headline     = document.getElementById('quest-headline');
-  const sub          = document.getElementById('quest-sub');
-  const nextBtn      = document.getElementById('quest-next-btn');
-  const areaGrid     = document.getElementById('quest-areas');
-  const defaultList  = document.getElementById('quest-default-list');
-
-  // Area toggle buttons
-  areaGrid.querySelectorAll('.quest-area-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const area = btn.dataset.area;
-      if (selectedAreas.includes(area)) {
-        if (selectedAreas.length <= 1) return; // keep at least one
-        selectedAreas = selectedAreas.filter(a => a !== area);
-        btn.classList.remove('active');
-      } else {
-        selectedAreas.push(area);
-        btn.classList.add('active');
-      }
-    });
-  });
-
-  nextBtn.addEventListener('click', () => {
-    if (questStep === 1) {
-      // Move to step 2: pick default area
-      questStep = 2;
-      stepNum.textContent = 'Step 2 of 2';
-      headline.textContent = 'Which area do you start with?';
-      sub.textContent = 'This will be pre-selected when you add a new task.';
-      body1.style.display = 'none';
-      body2.style.display = 'block';
-      nextBtn.textContent = 'Start using FocusBook →';
-
-      // Build default-area list from selected
-      defaultList.innerHTML = '';
-      const AREA_ICONS = { client:'💼', creative:'🎨', learning:'📚', admin:'🗂️', health:'🏃', personal:'🏠', finance:'💰', social:'👥' };
-      selectedAreas.forEach(area => {
-        const btn = document.createElement('button');
-        btn.className = 'quest-default-btn' + (area === defaultArea ? ' active' : '');
-        btn.dataset.area = area;
-        btn.innerHTML = `<span>${AREA_ICONS[area] || '📌'}</span> ${area.charAt(0).toUpperCase()+area.slice(1)}`;
-        btn.addEventListener('click', () => {
-          defaultArea = area;
-          defaultList.querySelectorAll('.quest-default-btn').forEach(b => b.classList.toggle('active', b.dataset.area === area));
-        });
-        defaultList.appendChild(btn);
-      });
-
-      // If current defaultArea not in selected, reset
-      if (!selectedAreas.includes(defaultArea)) defaultArea = selectedAreas[0];
-    } else {
-      // Finish — save to localStorage and Firestore meta
-      const prefs = { areas: selectedAreas, defaultArea };
-      localStorage.setItem('fb_area_prefs', JSON.stringify(prefs));
-      if (questDoneKey) localStorage.setItem(questDoneKey, '1');
-
-      // Update area chips in add panel to match selections
-      applyAreaPrefs(prefs);
-
-      // Save to Firestore for cross-device sync
-      if (metaRef) metaRef.set({ areaPrefs: prefs }, { merge: true }).catch(() => {});
-
-      // Animate out
-      overlay.classList.add('quest-exit');
-      overlay.addEventListener('animationend', () => {
-        overlay.style.display = 'none';
-        overlay.classList.remove('quest-exit');
-        document.body.style.overflow = '';
-      }, { once: true });
-    }
-  });
-
-  function applyAreaPrefs(prefs) {
-    const container = document.getElementById('area-chips');
-    if (container) {
-      container.innerHTML = '';
-      prefs.areas.forEach(area => {
-        const btn = document.createElement('button');
-        btn.className = 'chip';
-        btn.dataset.value = area;
-        btn.textContent = area.charAt(0).toUpperCase() + area.slice(1);
-        container.appendChild(btn);
-      });
-    }
-    // Set default area
-    userDefaultArea = prefs.defaultArea;
-    sel.area = userDefaultArea;
-    setChips('area-chips', userDefaultArea);
-  }
-
-  // Load saved prefs on startup
-  const saved = localStorage.getItem('fb_area_prefs');
-  if (saved) {
-    try { applyAreaPrefs(JSON.parse(saved)); } catch(e) {}
-  }
-
-  // Expose to onboarding finish flow
-  window.showQuestionnaire = function(doneKey) {
-    questDoneKey    = doneKey;
-    questStep       = 1;
-    selectedAreas   = [...DEFAULT_AREAS];
-    defaultArea     = 'client';
-    stepNum.textContent  = 'Step 1 of 2';
-    headline.textContent = 'What areas do you work in?';
-    sub.textContent      = "We'll customise your task labels to match how you actually think.";
-    nextBtn.textContent  = 'Next →';
-    body1.style.display  = 'block';
-    body2.style.display  = 'none';
-
-    // Reset toggles
-    areaGrid.querySelectorAll('.quest-area-btn').forEach(btn => {
-      btn.classList.toggle('active', DEFAULT_AREAS.includes(btn.dataset.area));
-    });
-
-    overlay.style.display = 'flex';
-    overlay.classList.add('quest-enter');
-    overlay.addEventListener('animationend', () => overlay.classList.remove('quest-enter'), { once: true });
-    document.body.style.overflow = 'hidden';
-  };
-})();
 
 /* ═══════════════════════════════════════════════════════════
    PLAN YOUR DAY — Morning Ritual  (additive module)
@@ -2389,6 +2587,7 @@ function escHtml(s) {
 
   /* ── Start my day — with double-entry protection ── */
   let pydSaving = false;
+
   document.getElementById('pyd-start-btn').addEventListener('click', async (e) => {
     if (pydSaving) return;  // prevent double-tap
     pydSaving = true;
@@ -2441,3 +2640,423 @@ function escHtml(s) {
 })(); // end PlanYourDay IIFE
 
 console.log("App.js loaded successfully!");
+
+/* ── TOUCH SWIPE LOGIC ────────────────────────────────────── */
+function attachSwipeListeners(card, task) {
+  const slider = card.querySelector('.task-card-slider');
+  if (!slider) return;
+
+  let startX = 0;
+  let currentX = 0;
+  let isDragging = false;
+  let actionThreshold = 80;
+
+  slider.addEventListener('touchstart', (e) => {
+    startX = e.touches[0].clientX;
+    isDragging = true;
+    slider.classList.add('swiping');
+  }, {passive: true});
+
+  slider.addEventListener('touchmove', (e) => {
+    if (!isDragging) return;
+    currentX = e.touches[0].clientX - startX;
+    
+    // Resistance if dragging past threshold
+    if (Math.abs(currentX) > actionThreshold) {
+      currentX = currentX > 0 ? actionThreshold + (currentX - actionThreshold) * 0.2 : -actionThreshold + (currentX + actionThreshold) * 0.2;
+    }
+    
+    slider.style.transform = `translateX(${currentX}px)`;
+  }, {passive: true});
+
+  slider.addEventListener('touchend', (e) => {
+    if (!isDragging) return;
+    isDragging = false;
+    slider.classList.remove('swiping');
+
+    if (currentX > actionThreshold) {
+      // Swipe Right -> Complete
+      slider.style.transform = 'translateX(100%)';
+      setTimeout(() => toggleTask(task.id, null), 200);
+    } else if (currentX < -actionThreshold) {
+      // Swipe Left -> Delete
+      slider.style.transform = 'translateX(-100%)';
+      setTimeout(() => {
+        if (confirm('Delete this task?')) {
+          deleteTask(task.id);
+        } else {
+          slider.style.transform = 'translateX(0)';
+        }
+      }, 200);
+    } else {
+      // Snap back
+      slider.style.transform = 'translateX(0)';
+    }
+    currentX = 0;
+  });
+}
+
+/* ── COMMAND PALETTE (Cmd+K) ────────────────────────────── */
+(function initCmdPalette() {
+  const overlay = document.getElementById('cmd-palette');
+  const input = document.getElementById('cmd-input');
+  if (!overlay || !input) return;
+
+  function openPalette() {
+    overlay.style.display = 'flex';
+    input.value = '';
+    setTimeout(() => input.focus(), 50);
+  }
+
+  function closePalette() {
+    overlay.style.display = 'none';
+  }
+
+  // Global Keyboard Listener
+  document.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+      e.preventDefault();
+      if (overlay.style.display === 'flex') {
+        closePalette();
+      } else {
+        openPalette();
+      }
+    }
+    if (e.key === 'Escape' && overlay.style.display === 'flex') {
+      closePalette();
+    }
+  });
+
+  // Close on outside click
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) closePalette();
+  });
+
+  // Handle actions
+  document.querySelectorAll('.cmd-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const action = item.dataset.action;
+      closePalette();
+      if (action === 'new-task') {
+        openAddPanel();
+      } else if (action === 'focus') {
+        document.querySelector('[data-tab="today"]')?.click();
+      } else if (action === 'horizon') {
+        document.querySelector('[data-tab="upcoming"]')?.click();
+      } else if (action === 'insights') {
+        document.querySelector('[data-tab="someday"]')?.click();
+      } else if (action === 'mock-data') {
+        generateMockData();
+      } else if (action === 'delete-mock') {
+        deleteMockData();
+      }
+    });
+  });
+})();
+
+/* ── MOCK DATA GENERATOR ────────────────────────────────── */
+async function generateMockData() {
+  const now = new Date();
+  
+  function getStr(daysOffset) {
+    const d = new Date(now);
+    d.setDate(d.getDate() + daysOffset);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
+  const mockTasks = [
+    // Streak Building (Done in past 3 days)
+    { id: 'm1', name: 'Completed Past Task (Day -3)', priority: 'high', area: 'client', schedule: 'date', date: getStr(-3), done: true, doneDate: getStr(-3), created: now.getTime() - 86400000*3 },
+    { id: 'm2', name: 'Completed Past Task (Day -2)', priority: 'medium', area: 'admin', schedule: 'date', date: getStr(-2), done: true, doneDate: getStr(-2), created: now.getTime() - 86400000*2 },
+    { id: 'm3', name: 'Completed Past Task (Day -1)', priority: 'high', area: 'personal', schedule: 'date', date: getStr(-1), done: true, doneDate: getStr(-1), created: now.getTime() - 86400000*1 },
+    
+    // Carry-over tasks (Not done in past)
+    { id: 'm4', name: 'Forgot to do this yesterday', priority: 'medium', area: 'health', schedule: 'date', date: getStr(-1), done: false, carriedOver: false, created: now.getTime() - 86400000*1 },
+
+    // Today Tasks
+    { id: 'm5', name: 'Finish project proposal', priority: 'high', area: 'client', schedule: 'today', date: getStr(0), done: false, created: now.getTime() },
+    { id: 'm6', name: 'Reply to emails', priority: 'medium', area: 'admin', schedule: 'today', date: getStr(0), done: false, created: now.getTime(), subItems: [{id:'s1', name:'Client A', done:false}, {id:'s2', name:'Team', done:true}] },
+    { id: 'm7', name: 'Read article', priority: 'low', area: 'learning', schedule: 'today', date: getStr(0), done: false, created: now.getTime() },
+
+    // Upcoming
+    { id: 'm8', name: 'Prepare for meeting', priority: 'high', area: 'client', schedule: 'date', date: getStr(1), done: false, created: now.getTime() },
+    
+    // Someday
+    { id: 'm9', name: 'Learn a new language', priority: 'low', area: 'learning', schedule: 'someday', date: '', done: false, created: now.getTime() },
+
+    // Recurring
+    { id: 'm10', name: 'Daily Standup', recurring: true, recurDays: 30, recurStartDate: getStr(0), recurDoneByDate: {}, area: 'client', created: now.getTime() }
+  ];
+
+  try {
+    for (const t of mockTasks) {
+      await saveTask(t);
+    }
+    // Update streak meta
+    streak = { count: 3, maxCount: 3, startDate: getStr(-3), lastDate: getStr(-1) };
+    await saveMeta();
+    
+    showToast({ message: "Mock data generated successfully!", type: "success" });
+    switchTab('today');
+  } catch (err) {
+    console.error(err);
+    showToast({ message: "Error generating mock data", type: "error" });
+  }
+}
+
+async function deleteMockData() {
+  try {
+    const mockTasks = tasks.filter(t => String(t.id).startsWith('m'));
+    if (mockTasks.length === 0) {
+      showToast({ message: "No mock data found to delete.", type: "info" });
+      return;
+    }
+    
+    for (const t of mockTasks) {
+      await deleteTaskCloud(t.id);
+    }
+    
+    // Reset streak if we added a fake one
+    streak = { count: 0, maxCount: 0, startDate: '', lastDate: '' };
+    await saveMeta();
+    
+    showToast({ message: "Mock data deleted successfully!", type: "success" });
+  } catch (err) {
+    console.error(err);
+    showToast({ message: "Error deleting mock data", type: "error" });
+  }
+}
+
+/* ── TASK OPTIONS & FOCUS SESSION LOGIC ─────────────────── */
+
+function openTaskOptions(task) {
+  activeOptionsTask = task;
+  const overlay = document.getElementById('task-options-overlay');
+  const title = document.getElementById('task-options-title');
+  const sheet = overlay.querySelector('.task-options-sheet');
+  const historyBtn = document.getElementById('task-opt-history');
+  
+  if (title) title.textContent = task.name;
+  
+  if (historyBtn) {
+    historyBtn.style.display = task.recurring ? 'block' : 'none';
+  }
+  
+  if (overlay) {
+    overlay.style.display = 'flex';
+    // Trigger slide up animation
+    requestAnimationFrame(() => {
+      sheet.style.transform = 'translateY(0)';
+    });
+  }
+}
+
+function closeTaskOptions() {
+  activeOptionsTask = null;
+  const overlay = document.getElementById('task-options-overlay');
+  if (!overlay) return;
+  const sheet = overlay.querySelector('.task-options-sheet');
+  sheet.style.transform = 'translateY(100%)';
+  setTimeout(() => overlay.style.display = 'none', 300);
+}
+
+// Setup Task Options listeners
+document.getElementById('task-options-overlay')?.addEventListener('click', (e) => {
+  if (e.target.id === 'task-options-overlay') closeTaskOptions();
+});
+document.getElementById('task-opt-cancel')?.addEventListener('click', closeTaskOptions);
+
+document.getElementById('task-opt-edit')?.addEventListener('click', () => {
+  if (activeOptionsTask) {
+    openEditPanel(activeOptionsTask);
+  }
+  closeTaskOptions();
+});
+
+document.getElementById('task-opt-delete')?.addEventListener('click', () => {
+  if (activeOptionsTask) {
+    deleteTask(activeOptionsTask.id);
+  }
+  closeTaskOptions();
+});
+
+document.getElementById('task-opt-history')?.addEventListener('click', () => {
+  if (activeOptionsTask && activeOptionsTask.recurring) {
+    openRecurringHistory(activeOptionsTask);
+  }
+  closeTaskOptions();
+});
+
+// History Overlay Logic
+function openRecurringHistory(task) {
+  const overlay = document.getElementById('recurring-history-overlay');
+  const title = document.getElementById('history-task-title');
+  const grid = document.getElementById('history-grid');
+  const stats = document.getElementById('history-task-stats');
+  
+  if (!overlay || !grid) return;
+  
+  if (title) title.textContent = task.name;
+  
+  grid.innerHTML = '';
+  const totalDays = Math.min(365, Math.max(1, task.recurDays || 7));
+  let completedCount = 0;
+  
+  // Dynamic scaling: aim for a rough square layout
+  const cols = Math.ceil(Math.sqrt(totalDays));
+  grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+  // Adjust gap dynamically to fit tightly
+  grid.style.gap = cols > 15 ? '2px' : cols > 8 ? '4px' : '6px';
+  
+  // Calculate today offset so future days can be rendered properly if needed,
+  // but the grid simply maps 0 to recurDays-1
+  const startObj = new Date(task.recurStartDate);
+  
+  for (let i = 0; i < totalDays; i++) {
+    const d = new Date(startObj);
+    d.setDate(d.getDate() + i);
+    const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    
+    const isDone = !!(task.recurDoneByDate && task.recurDoneByDate[dateStr]);
+    if (isDone) completedCount++;
+    
+    const cell = document.createElement('div');
+    cell.style.aspectRatio = '1 / 1';
+    cell.style.borderRadius = '4px';
+    cell.style.backgroundColor = isDone ? 'var(--accent)' : 'var(--bg-elevated)';
+    if (isDone) {
+      cell.style.boxShadow = '0 0 8px var(--accent-glow)';
+    }
+    cell.title = `Day ${i+1}: ${dateStr} - ${isDone ? 'Completed' : 'Unattempted'}`;
+    grid.appendChild(cell);
+  }
+  
+  if (stats) {
+    stats.textContent = `${completedCount} / ${totalDays} days successfully completed`;
+  }
+  
+  overlay.style.display = 'flex';
+}
+
+function closeRecurringHistory() {
+  const overlay = document.getElementById('recurring-history-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+document.getElementById('recurring-history-overlay')?.addEventListener('click', (e) => {
+  if (e.target.id === 'recurring-history-overlay') closeRecurringHistory();
+});
+
+document.getElementById('task-opt-focus')?.addEventListener('click', () => {
+  if (activeOptionsTask) {
+    openFocusSession(activeOptionsTask);
+  }
+  closeTaskOptions();
+});
+
+// Focus Session Logic
+function openFocusSession(task) {
+  activeFocusTask = task;
+  isFocusPaused = true;
+  focusDurationMinutes = 25;
+  focusTimeRemaining = focusDurationMinutes * 60;
+  
+  const overlay = document.getElementById('focus-session-overlay');
+  const title = document.getElementById('focus-task-title');
+  if (title) title.textContent = task.name;
+  
+  updateFocusDisplay();
+  if (overlay) overlay.style.display = 'flex';
+}
+
+function closeFocusSession() {
+  const overlay = document.getElementById('focus-session-overlay');
+  if (overlay) overlay.style.display = 'none';
+  pauseFocusTimer();
+  activeFocusTask = null;
+}
+
+function updateFocusDisplay() {
+  const display = document.getElementById('focus-time-display');
+  const circle = document.getElementById('focus-progress-circle');
+  
+  if (display) {
+    const m = Math.floor(focusTimeRemaining / 60);
+    const s = focusTimeRemaining % 60;
+    display.textContent = `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  }
+  
+  if (circle) {
+    const totalSeconds = focusDurationMinutes * 60;
+    const progress = focusTimeRemaining / totalSeconds;
+    // Circumference is ~816 for r=130
+    const offset = 816 - (progress * 816);
+    circle.style.strokeDashoffset = offset;
+  }
+  
+  document.getElementById('focus-icon-play').style.display = isFocusPaused ? 'block' : 'none';
+  document.getElementById('focus-icon-pause').style.display = isFocusPaused ? 'none' : 'block';
+}
+
+function toggleFocusTimer() {
+  if (isFocusPaused) {
+    startFocusTimer();
+  } else {
+    pauseFocusTimer();
+  }
+}
+
+function startFocusTimer() {
+  if (!isFocusPaused || focusTimeRemaining <= 0) return;
+  isFocusPaused = false;
+  updateFocusDisplay();
+  
+  focusTimerInterval = setInterval(() => {
+    focusTimeRemaining--;
+    updateFocusDisplay();
+    
+    if (focusTimeRemaining <= 0) {
+      pauseFocusTimer();
+      // Optional: Play sound or show alert
+      showToast({ message: "Focus session complete!", type: 'success' });
+    }
+  }, 1000);
+}
+
+function pauseFocusTimer() {
+  isFocusPaused = true;
+  clearInterval(focusTimerInterval);
+  updateFocusDisplay();
+}
+
+document.getElementById('focus-exit-btn')?.addEventListener('click', closeFocusSession);
+document.getElementById('focus-play-pause-btn')?.addEventListener('click', toggleFocusTimer);
+
+document.getElementById('focus-add-btn')?.addEventListener('click', () => {
+  focusDurationMinutes += 5;
+  focusTimeRemaining += 5 * 60;
+  updateFocusDisplay();
+});
+
+document.getElementById('focus-sub-btn')?.addEventListener('click', () => {
+  if (focusDurationMinutes > 5) {
+    focusDurationMinutes -= 5;
+    focusTimeRemaining -= 5 * 60;
+    updateFocusDisplay();
+  }
+});
+
+document.getElementById('focus-complete-btn')?.addEventListener('click', async () => {
+  if (activeFocusTask) {
+    closeFocusSession();
+    // Simulate clicking the checkbox to handle all logic (XP, streak, etc)
+    const card = document.querySelector(`.task-card[data-id="${activeFocusTask.id}"]`);
+    if (card) {
+      const checkBtn = card.querySelector('.task-check');
+      if (checkBtn) checkBtn.click();
+    } else {
+      // Fallback
+      toggleTask(activeFocusTask.id, { stopPropagation: () => {} });
+    }
+  }
+});

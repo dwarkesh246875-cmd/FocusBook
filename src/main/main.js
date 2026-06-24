@@ -52,23 +52,7 @@ let mainWin = null;
 let overlayWin = null;
 let lastTasks = [];
 
-// ── Main window ──────────────────────────────────────────────
-function createMainWindow() {
-  mainWin = new BrowserWindow({
-    width: 450, height: 800, minWidth: 360, minHeight: 640,
-    title: 'FocusBook', backgroundColor: '#1a1a2e',
-    autoHideMenuBar: true,
-    webPreferences: {
-      partition: 'persist:focusbook',
-      nodeIntegration: false,
-      contextIsolation: true,
-      preload: path.join(__dirname, 'preload-main.js'),
-    },
-  });
-  mainWin.setMenu(null);
-  mainWin.loadURL(`http://127.0.0.1:${serverPort}/app/index.html`);
-  mainWin.on('closed', () => { mainWin = null; });
-}
+
 
 // ── Overlay widget window ────────────────────────────────────
 function createOverlayWindow() {
@@ -106,7 +90,7 @@ function createOverlayWindow() {
     overlayWin.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
   }
 
-  overlayWin.loadURL(`http://127.0.0.1:${serverPort}/overlay/overlay.html`);
+  overlayWin.webContents.setWindowOpenHandler(({ url }) => { return { action: \'allow\', overrideBrowserWindowOptions: { autoHideMenuBar: true, webPreferences: { nodeIntegration: false, contextIsolation: true } } }; });\n  overlayWin.loadURL(`http://localhost:${serverPort}/overlay/overlay.html`);
   overlayWin.webContents.on('did-finish-load', () => {
     if (lastTasks.length > 0) {
       overlayWin.webContents.send('tasks-updated', lastTasks);
@@ -125,16 +109,10 @@ function createOverlayWindow() {
   });
 }
 
-// ── App lifecycle ────────────────────────────────────────────
 app.whenReady().then(() => {
-  server.listen(0, '127.0.0.1', () => {
+  server.listen(0, 'localhost', () => {
     serverPort = server.address().port;
-    createMainWindow();
     createOverlayWindow();
-  });
-
-  app.on('activate', () => {          // macOS dock click
-    if (!mainWin) createMainWindow();
   });
 });
 
@@ -200,27 +178,10 @@ ipcMain.on('overlay-snap', () => {
   saveConfig(cfg);
 });
 
-// ── IPC: Show main window ────────────────────────────────────
-ipcMain.on('show-main-window', () => {
-  if (mainWin) {
-    if (mainWin.isMinimized()) mainWin.restore();
-    mainWin.show();
-    mainWin.focus();
-  } else {
-    createMainWindow();
-  }
-});
-
 // ── IPC: Tasks ───────────────────────────────────────────────
 ipcMain.on('tasks-updated', (e, tasks) => {
   lastTasks = tasks;
   if (overlayWin && !overlayWin.isDestroyed()) {
     overlayWin.webContents.send('tasks-updated', tasks);
-  }
-});
-
-ipcMain.on('overlay-toggle-task', (e, id, done) => {
-  if (mainWin && !mainWin.isDestroyed()) {
-    mainWin.webContents.send('overlay-toggle-task', id, done);
   }
 });

@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=9" />
+  <link rel="stylesheet" href="style2.css?v=9" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -161,17 +161,16 @@
 
       <!-- ── SLIDE 3: XP & Streaks ── -->
       <div class="ob-slide" id="ob-slide-2">
-        <div class="ob-slide-inner ob-slide-dark">
-          <div class="ob-glow-bg"></div>
+        <div class="ob-slide-inner">
           <div class="ob-content">
-            <div class="ob-slide-num ob-num-light">03</div>
-            <h2 class="ob-slide-title ob-title-light">Every task<br/>earns <em>XP.</em><br/>Every day<br/>builds your <em>streak.</em></h2>
-            <p class="ob-body ob-body-light">Complete tasks to earn XP — 30 for Low, 60 for Medium, 100 for High. Keep going daily and your streak flame grows from grey to yellow, orange, red, and finally purple.</p>
+            <div class="ob-slide-num">03</div>
+            <h2 class="ob-slide-title">Earn <em>XP.</em><br/>Don't <em>carry over.</em></h2>
+            <p class="ob-body">Complete tasks to earn XP and fuel your daily streak. But beware: any tasks that carry over to the next day will cost you a 10 XP penalty. Keep your list clear!</p>
             <div class="ob-visual ob-visual-xp">
               <div class="ob-xp-row">
                 <div class="ob-xp-chip"><span class="ob-xp-num">100</span><span class="ob-xp-lbl">High XP</span></div>
                 <div class="ob-xp-chip"><span class="ob-xp-num">60</span><span class="ob-xp-lbl">Med XP</span></div>
-                <div class="ob-xp-chip"><span class="ob-xp-num">30</span><span class="ob-xp-lbl">Low XP</span></div>
+                <div class="ob-xp-chip" style="background:rgba(255,60,60,0.15);color:#FF4C4C;border:1px solid rgba(255,60,60,0.3)"><span class="ob-xp-num">-10</span><span class="ob-xp-lbl">Penalty</span></div>
               </div>
               <div class="ob-flame-row">
                 <div class="ob-flame-step"><span class="ob-flame-icon" style="filter:grayscale(1) opacity(.5)">🔥</span><span class="ob-flame-lbl">0</span></div>
@@ -185,41 +184,25 @@
         </div>
       </div>
 
-      <!-- ── SLIDE 4: Themes & Calendar ── -->
+      <!-- ── SLIDE 4: Recurring Tasks & History Grid ── -->
       <div class="ob-slide" id="ob-slide-3">
         <div class="ob-slide-inner">
           <div class="ob-ruled"></div>
           <div class="ob-margin"></div>
           <div class="ob-content">
             <div class="ob-slide-num">04</div>
-            <h2 class="ob-slide-title">The app shifts<br/>with your <em>day.</em></h2>
-            <p class="ob-body">Five time-aware themes — Morning, Midday, Golden hour, Night, and Midnight — switch automatically. Your calendar tracks every perfect day, partial day, and miss, so you always know where you stand.</p>
-            <div class="ob-visual ob-visual-themes">
-              <div class="ob-theme-pills">
-                <div class="ob-theme-pill" style="background:linear-gradient(135deg,#E8825A,#F5A47A,#C8DCFF);color:#1A2A3E;border:none">🌅 Morning</div>
-                <div class="ob-theme-pill" style="background:linear-gradient(135deg,#4CA1AF,#C4E0E5);color:#112A46;border:none">🌞 Midday</div>
-                <div class="ob-theme-pill" style="background:linear-gradient(135deg,#FF8C42,#FFC050);color:#3E1F00;border:none">🌇 Golden</div>
-                <div class="ob-theme-pill" style="background:linear-gradient(135deg,#141E30,#243B55);color:#E2E8F0;border:none">🌙 Night</div>
-                <div class="ob-theme-pill" style="background:linear-gradient(135deg,#000,#0F2027);color:#818CF8;border:none">✦ Midnight</div>
-              </div>
-              <!-- Mini calendar -->
-              <div class="ob-mini-cal">
-                <div class="ob-cal-row">
-                  <span class="ob-cd ob-cd-p"></span><span class="ob-cd ob-cd-p"></span><span class="ob-cd ob-cd-p"></span>
-                  <span class="ob-cd ob-cd-m"></span><span class="ob-cd ob-cd-p"></span><span class="ob-cd ob-cd-p"></span><span class="ob-cd ob-cd-p"></span>
+            <h2 class="ob-slide-title">Build lasting<br/><em>habits.</em></h2>
+            <p class="ob-body">Create Recurring Tasks to build solid routines. Track your daily consistency with the beautiful GitHub-style History Grid.</p>
+            <div class="ob-visual ob-visual-history">
+              <div class="ob-history-mock">
+                <div class="ob-history-header">
+                   <div style="font-weight:600; font-size:14px; color:var(--ink);">Drink Water</div>
+                   <div style="font-size:11px; color:var(--ink-4); margin-top:2px;">Recurring · Day 12 / 30</div>
                 </div>
-                <div class="ob-cal-row">
-                  <span class="ob-cd ob-cd-p"></span><span class="ob-cd ob-cd-x"></span><span class="ob-cd ob-cd-p"></span>
-                  <span class="ob-cd ob-cd-p"></span><span class="ob-cd ob-cd-p"></span><span class="ob-cd ob-cd-m"></span><span class="ob-cd ob-cd-p"></span>
-                </div>
-                <div class="ob-cal-row">
-                  <span class="ob-cd ob-cd-p"></span><span class="ob-cd ob-cd-p"></span><span class="ob-cd ob-cd-today"></span>
-                  <span class="ob-cd ob-cd-e"></span><span class="ob-cd ob-cd-e"></span><span class="ob-cd ob-cd-e"></span><span class="ob-cd ob-cd-e"></span>
-                </div>
-                <div class="ob-cal-legend">
-                  <span><span class="ob-leg ob-leg-p"></span>Perfect</span>
-                  <span><span class="ob-leg ob-leg-m"></span>Partial</span>
-                  <span><span class="ob-leg ob-leg-x"></span>Missed</span>
+                <div class="ob-history-grid-mock">
+                   <div class="ob-h-dot ob-h-done"></div><div class="ob-h-dot ob-h-done"></div><div class="ob-h-dot ob-h-done"></div><div class="ob-h-dot ob-h-done"></div><div class="ob-h-dot ob-h-done"></div>
+                   <div class="ob-h-dot ob-h-done"></div><div class="ob-h-dot ob-h-done"></div><div class="ob-h-dot ob-h-done"></div><div class="ob-h-dot ob-h-done"></div><div class="ob-h-dot ob-h-done"></div>
+                   <div class="ob-h-dot ob-h-done"></div><div class="ob-h-dot ob-h-done"></div><div class="ob-h-dot"></div><div class="ob-h-dot"></div><div class="ob-h-dot"></div>
                 </div>
               </div>
             </div>
@@ -237,12 +220,12 @@
             <h2 class="ob-slide-title">You're ready.<br/><em>Let's go.</em></h2>
             <p class="ob-body">A few things to remember as you get started:</p>
             <ul class="ob-tips">
-              <li><span class="ob-tip-icon">＋</span> Tap the <strong>+ Add task</strong> button anytime to add a task</li>
-              <li><span class="ob-tip-icon">▾</span> Tap the dropdown on any task to reveal and check <strong>sub-tasks</strong></li>
-              <li><span class="ob-tip-icon">🌅</span> In the morning, FocusBook will open your <strong>daily ritual</strong> automatically</li>
-              <li><span class="ob-tip-icon">🔥</span> Tap the <strong>flame</strong> in the top-left to see your streak &amp; calendar</li>
-              <li><span class="ob-tip-icon">🌙</span> The <strong>theme cycles</strong> with the time — tap &amp; hold the bottom-left button to toggle sync</li>
-              <li><span class="ob-tip-icon">📅</span> Use <strong>Upcoming</strong> and <strong>Someday</strong> tabs to plan beyond today</li>
+              <li><span class="ob-tip-icon">🔁</span> <strong>Long-press</strong> the <strong>+</strong> button to add a Recurring Task</li>
+              <li><span class="ob-tip-icon">⋮</span> Click the <strong>3-dots</strong> on any task to edit, delete, or view History</li>
+              <li><span class="ob-tip-icon">🌅</span> In the morning, FocusBook will open your <strong>daily ritual</strong></li>
+              <li><span class="ob-tip-icon">🔥</span> Tap the <strong>flame</strong> in the top-left to see your streak</li>
+              <li><span class="ob-tip-icon">🌗</span> Use the <strong>sun/moon</strong> toggle to switch between Light and Dark mode</li>
+              <li><span class="ob-tip-icon">📅</span> Use <strong>Upcoming</strong> and <strong>Someday</strong> tabs to plan ahead</li>
             </ul>
             <button class="ob-start-btn" id="ob-start-btn">
               Open FocusBook
@@ -284,7 +267,8 @@
     <div class="header-left">
       <!-- Streak badge — tap to open calendar modal -->
       <button class="streak-badge" id="streak-badge" aria-label="Open calendar">
-        <div id="lottie-badge-fire" style="width: 32px; height: 36px; transform-origin: bottom center; transition: transform 0.4s ease;"></div>
+        <div class="flame-glow" id="flame-glow"></div>
+        <div id="lottie-badge-fire" style="width: 44px; height: 50px; transform-origin: bottom center; transition: transform 0.4s ease;"></div>
         <span id="streak-count" class="streak-count-label">0</span>
       </button>
       <div>
@@ -300,6 +284,11 @@
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 7h7M9 5l2 2-2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 2H3a1 1 0 00-1 1v8a1 1 0 001 1h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
         </button>
       </div>
+      <button id="theme-sync-btn" class="theme-sync-btn" title="Toggle Light/Dark Theme">
+  <div class="theme-icon-wrap" id="theme-icon-wrap">
+    <!-- Icon set via JS -->
+  </div>
+</button>
     </div>
   </header>
 
@@ -347,6 +336,7 @@
         </div>
         <div class="cal-stats" id="cal-stats"></div>
         <div class="cal-dow-row">
+          <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
           <span>Su</span><span>Mo</span><span>Tu</span><span>We</span><span>Th</span><span>Fr</span><span>Sa</span>
         </div>
         <div class="cal-grid" id="cal-grid"></div>
@@ -425,33 +415,14 @@
   </main>
 
   <!-- FAB -->
+  <div class="fab-container">
   <button class="fab" id="fab-add" aria-label="Add new task">
     <svg width="22" height="22" viewBox="0 0 22 22" fill="none"><line x1="11" y1="4" x2="11" y2="18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="4" y1="11" x2="18" y2="11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-    <span>Add task</span>
   </button>
+  </div>
 
   <!-- COMBINED THEME + SYNC BUTTON (lower-left, tap=theme, hold=sync) -->
-  <button class="theme-sync-btn" id="theme-sync-btn" aria-label="Theme / Sync">
-    <span class="theme-icon-wrap" id="theme-icon-wrap">
-      <!-- Icons shown/hidden by JS -->
-      <svg class="t-icon" id="t-morning" width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="3.5" stroke="currentColor" stroke-width="1.3"/><line x1="9" y1="1.5" x2="9" y2="3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="9" y1="15" x2="9" y2="16.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="1.5" y1="9" x2="3" y2="9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="15" y1="9" x2="16.5" y2="9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="3.4" y1="3.4" x2="4.5" y2="4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="13.5" y1="13.5" x2="14.6" y2="14.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="14.6" y1="3.4" x2="13.5" y2="4.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><line x1="4.5" y1="13.5" x2="3.4" y2="14.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-      <svg class="t-icon" id="t-midday" width="18" height="18" viewBox="0 0 18 18" fill="none" style="display:none"><circle cx="9" cy="9" r="4" fill="currentColor" opacity=".15"/><circle cx="9" cy="9" r="3.5" stroke="currentColor" stroke-width="1.5"/><line x1="9" y1="1" x2="9" y2="3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="9" y1="14.5" x2="9" y2="17" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="1" y1="9" x2="3.5" y2="9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="14.5" y1="9" x2="17" y2="9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-      <svg class="t-icon" id="t-golden" width="18" height="18" viewBox="0 0 18 18" fill="none" style="display:none"><path d="M2 12 Q5 6 9 8 Q13 10 16 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="9" cy="13" r="3" stroke="currentColor" stroke-width="1.3"/><line x1="9" y1="10" x2="9" y2="9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-      <svg class="t-icon" id="t-night" width="18" height="18" viewBox="0 0 18 18" fill="none" style="display:none"><path d="M14.5 11A7 7 0 0 1 7 3.5a7 7 0 1 0 7.5 7.5z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="13" cy="4" r="0.8" fill="currentColor"/><circle cx="15" cy="7" r="0.5" fill="currentColor"/></svg>
-      <svg class="t-icon" id="t-midnight" width="18" height="18" viewBox="0 0 18 18" fill="none" style="display:none">
-        <circle cx="9" cy="9" r="2" fill="currentColor"/>
-        <circle cx="4" cy="5" r="1" fill="currentColor"/>
-        <circle cx="14" cy="6" r="1.5" fill="currentColor"/>
-        <circle cx="12" cy="14" r="1" fill="currentColor"/>
-        <circle cx="5" cy="13" r="1" fill="currentColor"/>
-        <path d="M4 5l5 4 5-3M9 9l3 5M9 9l-4 4" stroke="currentColor" stroke-width="1"/>
-      </svg>
-    </span>
-    <!-- Sync status dot -->
-    <span class="sync-dot" id="sync-dot"></span>
-    <!-- Long-press ring indicator -->
-    <span class="tsb-hold-ring" id="tsb-hold-ring"></span>
-  </button>
+  
 
   <!-- SHARED PANEL OVERLAY -->
   <div class="panel-overlay" id="panel-overlay"></div>
@@ -463,30 +434,36 @@
     <input type="text" class="task-input" id="task-input" placeholder="What needs to get done?" maxlength="120" autocomplete="off" />
     <div class="panel-field-group">
       <label class="panel-label">Priority</label>
-      <div class="chip-row" id="priority-chips">
-        <button class="chip chip-high active" data-value="high">High — 100 XP</button>
-        <button class="chip chip-med" data-value="medium">Medium — 60 XP</button>
-        <button class="chip chip-low" data-value="low">Low — 30 XP</button>
+      <div class="chip-row camera-scroll" id="priority-chips">
+        <button class="chip active" data-value="high">High</button>
+        <button class="chip" data-value="medium">Medium</button>
+        <button class="chip" data-value="low">Low</button>
+      </div>
+    </div>
+    <!-- Recurring days field — shown only when Recurring chip is selected -->
+    <div class="panel-field-group recurring-days-field" id="recurring-days-field" style="display:none">
+      <label class="panel-label">Repeat for</label>
+      <div class="recurring-days-row">
+        <input type="number" id="recurring-days-input" class="recurring-days-input" min="1" max="365" value="7" />
+        <span class="recurring-days-label">days starting today</span>
       </div>
     </div>
     <div class="panel-field-group">
-      <div class="panel-label-row">
-        <label class="panel-label">Area</label>
-        <button class="panel-edit-areas-btn" id="panel-edit-areas-btn" aria-label="Edit areas">
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M8 1.5l2 2L4 9.5H2V7.5L8 1.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
-          Edit areas
-        </button>
-      </div>
-      <div class="chip-row" id="area-chips">
+      <label class="panel-label">Area</label>
+      <div class="chip-row camera-scroll" id="area-chips">
         <button class="chip active" data-value="client">Client</button>
         <button class="chip" data-value="creative">Creative</button>
         <button class="chip" data-value="learning">Learning</button>
         <button class="chip" data-value="admin">Admin</button>
+        <button class="chip" data-value="health">Health</button>
+        <button class="chip" data-value="personal">Personal</button>
+        <button class="chip" data-value="finance">Finance</button>
+        <button class="chip" data-value="social">Social</button>
       </div>
     </div>
     <div class="panel-field-group">
       <label class="panel-label">Schedule</label>
-      <div class="chip-row" id="schedule-chips">
+      <div class="chip-row camera-scroll" id="schedule-chips">
         <button class="chip active" data-value="today">Today</button>
         <button class="chip" data-value="date">Pick date</button>
         <button class="chip" data-value="someday">Someday</button>
@@ -530,68 +507,7 @@
   <div class="toast-container" id="toast-container"></div>
 
 
-  <!-- ═══════════════════════════════════════════════════════
-       QUESTIONNAIRE — Area setup (shown after onboarding for new users)
-       ═══════════════════════════════════════════════════════ -->
-  <div class="quest-overlay" id="quest-overlay" style="display:none">
-    <div class="quest-card">
-      <div class="quest-ruled"></div>
-      <div class="quest-margin"></div>
-      <div class="quest-inner">
-        <div class="quest-step-num" id="quest-step-num">Step 1 of 2</div>
-        <h2 class="quest-headline" id="quest-headline">What areas do you work in?</h2>
-        <p class="quest-sub" id="quest-sub">We'll customise your task labels to match how you actually think.</p>
 
-        <!-- Step 1: area selection -->
-        <div class="quest-body" id="quest-body-1">
-          <div class="quest-areas" id="quest-areas">
-            <button class="quest-area-btn active" data-area="client">
-              <span class="quest-area-icon">💼</span>
-              <span class="quest-area-label">Client work</span>
-            </button>
-            <button class="quest-area-btn active" data-area="creative">
-              <span class="quest-area-icon">🎨</span>
-              <span class="quest-area-label">Creative</span>
-            </button>
-            <button class="quest-area-btn active" data-area="learning">
-              <span class="quest-area-icon">📚</span>
-              <span class="quest-area-label">Learning</span>
-            </button>
-            <button class="quest-area-btn active" data-area="admin">
-              <span class="quest-area-icon">🗂️</span>
-              <span class="quest-area-label">Admin</span>
-            </button>
-            <button class="quest-area-btn" data-area="health">
-              <span class="quest-area-icon">🏃</span>
-              <span class="quest-area-label">Health</span>
-            </button>
-            <button class="quest-area-btn" data-area="personal">
-              <span class="quest-area-icon">🏠</span>
-              <span class="quest-area-label">Personal</span>
-            </button>
-            <button class="quest-area-btn" data-area="finance">
-              <span class="quest-area-icon">💰</span>
-              <span class="quest-area-label">Finance</span>
-            </button>
-            <button class="quest-area-btn" data-area="social">
-              <span class="quest-area-icon">👥</span>
-              <span class="quest-area-label">Social</span>
-            </button>
-          </div>
-          <p class="quest-hint">Tap to toggle. You can change these later.</p>
-        </div>
-
-        <!-- Step 2: default area -->
-        <div class="quest-body" id="quest-body-2" style="display:none">
-          <p class="quest-step2-label">Which is your main focus?</p>
-          <div class="quest-default-list" id="quest-default-list"></div>
-        </div>
-
-        <button class="quest-next-btn" id="quest-next-btn">Next →</button>
-      </div>
-    </div>
-  </div>
-  <!-- END Questionnaire -->
 
   <!-- ═══════════════════════════════════════════════════════
        PLAN YOUR DAY — Morning Ritual Overlay
@@ -694,6 +610,99 @@
   </div>
   <!-- END Plan Your Day -->
 
-  <script src="app.js?v=6"></script>
+  <!-- COMMAND PALETTE -->
+  <div class="cmd-palette-overlay" id="cmd-palette" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.4); z-index:999; backdrop-filter:blur(4px); align-items:flex-start; justify-content:center; padding-top:10vh;">
+    <div style="background:var(--paper); width:100%; max-width:600px; border-radius:16px; border:1px solid var(--paper-edge); box-shadow:0 10px 40px var(--shadow-strong); overflow:hidden;">
+      <input type="text" id="cmd-input" placeholder="Type a command or search..." style="width:100%; padding:20px; font-size:18px; border:none; background:transparent; color:var(--ink); outline:none; font-family:'Outfit',sans-serif; border-bottom:1px solid var(--paper-edge);">
+      <div style="padding:10px 0; max-height:300px; overflow-y:auto;" id="cmd-list">
+        <div class="cmd-item" data-action="focus" style="padding:12px 20px; cursor:pointer; color:var(--ink-secondary);">Go to <strong>Focus</strong> (Today)</div>
+        <div class="cmd-item" data-action="horizon" style="padding:12px 20px; cursor:pointer; color:var(--ink-secondary);">Go to <strong>Horizon</strong> (Upcoming)</div>
+        <div class="cmd-item" data-action="insights" style="padding:12px 20px; cursor:pointer; color:var(--ink-secondary);">Go to <strong>Insights</strong> (Someday)</div>
+        <div class="cmd-item" data-action="new-task" style="padding:12px 20px; cursor:pointer; color:var(--ink-secondary);">Create <strong>New Task</strong></div>
+        <div class="cmd-item" data-action="mock-data" style="padding:12px 20px; cursor:pointer; color:var(--ink-secondary);">Generate <strong>Mock Data</strong> (Testing)</div>
+        <div class="cmd-item" data-action="delete-mock" style="padding:12px 20px; cursor:pointer; color:var(--ink-secondary);">Delete <strong>Mock Data</strong> (Testing)</div>
+      </div>
+    </div>
+  </div>
+  <!-- TASK OPTIONS OVERLAY -->
+  <div class="overlay" id="task-options-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; z-index: 1000; align-items: flex-end; justify-content: center; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px);">
+    <div class="task-options-sheet" style="background: var(--paper); width: 100%; max-width: 500px; border-radius: 20px 20px 0 0; padding: 20px 16px 30px; border-top: 1px solid var(--paper-edge); box-shadow: 0 -10px 40px var(--shadow-strong); transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.34, 1.2, 0.64, 1);">
+      <div style="width: 40px; height: 4px; border-radius: 2px; background: var(--border-mid); margin: 0 auto 20px;"></div>
+      <p id="task-options-title" style="text-align: center; font-size: 14px; color: var(--ink-3); margin-bottom: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 0 20px; font-weight: 500;"></p>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <button id="task-opt-focus" class="task-opt-btn" style="background: var(--accent); color: #fff; border: none; border-radius: 12px; padding: 16px; font-size: 16px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          Focus Session
+        </button>
+        <button id="task-opt-history" class="task-opt-btn" style="display: none; background: var(--bg-alt); color: var(--ink); border: 1px solid var(--border); border-radius: 12px; padding: 16px; font-size: 16px; font-weight: 500; cursor: pointer;">
+          View History
+        </button>
+        <button id="task-opt-edit" class="task-opt-btn" style="background: var(--bg-alt); color: var(--ink); border: 1px solid var(--border); border-radius: 12px; padding: 16px; font-size: 16px; font-weight: 500; cursor: pointer;">
+          Edit Task
+        </button>
+        <button id="task-opt-delete" class="task-opt-btn" style="background: var(--bg-alt); color: #ef4444; border: 1px solid var(--border); border-radius: 12px; padding: 16px; font-size: 16px; font-weight: 500; cursor: pointer;">
+          Delete Task
+        </button>
+        <button id="task-opt-cancel" class="task-opt-btn" style="background: transparent; color: var(--ink-3); border: none; padding: 12px; font-size: 14px; cursor: pointer; margin-top: 8px;">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECURRING HISTORY OVERLAY -->
+  <div class="overlay" id="recurring-history-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; z-index: 1002; align-items: center; justify-content: center; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); padding: 20px;">
+    <div style="background: var(--paper); width: 100%; max-width: 400px; border-radius: 20px; padding: 24px; border: 1px solid var(--paper-edge); box-shadow: 0 10px 40px var(--shadow-strong); position: relative;">
+      <p id="history-task-title" style="text-align: center; font-size: 16px; color: var(--ink); margin-bottom: 24px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></p>
+      
+      <!-- CSS Grid for Github-style checkerboard -->
+      <div id="history-grid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 24px;">
+        <!-- Cells injected via JS -->
+      </div>
+      
+      <p id="history-task-stats" style="text-align: center; font-size: 14px; color: var(--ink-3); font-weight: 500; margin: 0;"></p>
+    </div>
+  </div>
+
+  <!-- FOCUS SESSION OVERLAY -->
+  <div class="overlay" id="focus-session-overlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; z-index: 1001; background: var(--bg); flex-direction: column; align-items: center; justify-content: center; padding: 20px;">
+    <button id="focus-exit-btn" aria-label="Exit Focus Session" style="position: absolute; top: 20px; left: 20px; background: none; border: none; color: var(--ink-3); cursor: pointer; padding: 8px;">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+    <div style="text-align: center; max-width: 600px; width: 100%;">
+      <p style="color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 2px; font-size: 12px; margin-bottom: 16px;">Focusing on</p>
+      <h1 id="focus-task-title" style="font-size: 28px; line-height: 1.3; color: var(--ink); margin-bottom: 40px; font-weight: 500;">Task Name</h1>
+      
+      <!-- Timer Display -->
+      <div style="position: relative; width: 280px; height: 280px; margin: 0 auto 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: var(--bg-elevated); box-shadow: inset 0 2px 10px var(--shadow-strong), 0 10px 30px var(--shadow-soft);">
+        <svg id="focus-progress-svg" width="280" height="280" viewBox="0 0 280 280" style="position: absolute; top: 0; left: 0; transform: rotate(-90deg);">
+          <circle cx="140" cy="140" r="130" fill="none" stroke="var(--border)" stroke-width="4"></circle>
+          <circle id="focus-progress-circle" cx="140" cy="140" r="130" fill="none" stroke="var(--accent)" stroke-width="8" stroke-linecap="round" stroke-dasharray="816" stroke-dashoffset="0" style="transition: stroke-dashoffset 1s linear;"></circle>
+        </svg>
+        <div style="position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center;">
+          <div id="focus-time-display" style="font-size: 64px; font-variant-numeric: tabular-nums; font-weight: 300; color: var(--ink); line-height: 1;">25:00</div>
+          <div style="display: flex; gap: 16px; margin-top: 12px;">
+            <button id="focus-sub-btn" style="background: none; border: none; color: var(--ink-3); font-size: 14px; cursor: pointer; padding: 4px 8px; border-radius: 6px;">-5m</button>
+            <button id="focus-add-btn" style="background: none; border: none; color: var(--ink-3); font-size: 14px; cursor: pointer; padding: 4px 8px; border-radius: 6px;">+5m</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 16px; justify-content: center; align-items: center; margin-bottom: 30px;">
+        <button id="focus-play-pause-btn" style="width: 64px; height: 64px; border-radius: 50%; background: var(--ink); color: var(--bg); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px var(--shadow-strong); transition: transform 0.2s;">
+          <!-- Play Icon initially -->
+          <svg id="focus-icon-play" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg>
+          <svg id="focus-icon-pause" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+        </button>
+      </div>
+      
+      <button id="focus-complete-btn" style="background: var(--success, #10b981); color: #fff; border: none; border-radius: 30px; padding: 14px 32px; font-size: 16px; font-weight: 600; cursor: pointer; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3); transition: transform 0.2s, box-shadow 0.2s; display: inline-flex; align-items: center; gap: 8px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        Task Complete
+      </button>
+    </div>
+  </div>
+
+  <script src="app.js?v=11"></script>
 </body>
 </html>
